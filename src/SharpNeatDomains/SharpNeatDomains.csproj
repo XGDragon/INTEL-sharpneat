@@ -121,6 +121,8 @@
     <Compile Include="FunctionRegression\ParameterSamplingInfo.cs" />
     <Compile Include="FunctionRegression\FnRegressionExperiment.cs" />
     <Compile Include="INeatExperiment.cs" />
+    <Compile Include="IPD\IPDEvaluator.cs" />
+    <Compile Include="IPD\IPDExperiment.cs" />
     <Compile Include="NeatGenomeView.cs">
       <SubType>UserControl</SubType>
     </Compile>

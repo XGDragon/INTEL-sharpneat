@@ -313,6 +313,24 @@ Each test case is tested in turn. An output less than 0.5 is interpreted as a 0(
 
     </Config>
   </Experiment>
+
+  <Experiment name="IPD Problem (Novelty NEAT)">
+    <AssemblyPath>SharpNeatDomains.dll</AssemblyPath>
+    <ClassName>SharpNeat.Domains.IPD.IPDExperiment</ClassName>
+    <Config>
+      <PopulationSize>150</PopulationSize>
+      <SpecieCount>10</SpecieCount>
+      <Activation>
+        <Scheme>Acyclic</Scheme>
+      </Activation>
+      <ComplexityRegulationStrategy>Absolute</ComplexityRegulationStrategy>
+      <ComplexityThreshold>10</ComplexityThreshold>
+      <Description>
+        TBD.
+      </Description>
+
+    </Config>
+  </Experiment>
   
   <Experiment name="Pole Balancing[Double Pole] (NEAT)">
     <AssemblyPath>SharpNeatDomains.dll</AssemblyPath>
@@ -492,7 +510,7 @@ This controller uses normalized, continuous inputs rather than discretized input
     <AssemblyPath>SharpNeatDomains.dll</AssemblyPath>
     <ClassName>SharpNeat.Domains.PreyCapture.PreyCaptureExperiment</ClassName>
     <Config>
-      <PopulationSize>150</PopulationSize>
+      <PopulationSize>152</PopulationSize>
       <SpecieCount>10</SpecieCount>
       <Activation>
         <Scheme>CyclicFixedIters</Scheme>

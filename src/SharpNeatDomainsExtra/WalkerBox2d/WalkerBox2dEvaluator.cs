@@ -26,10 +26,10 @@ namespace SharpNeat.DomainsExtra.WalkerBox2d
 
         XorShiftRandom _rng;
 		int	_maxTimesteps;
+        bool _stopConditionSatisfied = true;
 
         // Evaluator state.
         ulong _evalCount;
-        bool _stopConditionSatisfied;
 
         #endregion
 
