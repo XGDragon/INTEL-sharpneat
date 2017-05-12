@@ -123,6 +123,16 @@
     <Compile Include="INeatExperiment.cs" />
     <Compile Include="IPD\IPDEvaluator.cs" />
     <Compile Include="IPD\IPDExperiment.cs" />
+    <Compile Include="IPD\IPDGame.cs" />
+    <Compile Include="IPD\Players\Generated\IPDPlayerGeneratedConditionalNode.cs" />
+    <Compile Include="IPD\Players\Generated\IPDPlayerGeneratedEvaluationResult.cs" />
+    <Compile Include="IPD\Players\Generated\IPDPlayerGeneratedNode.cs" />
+    <Compile Include="IPD\Players\Generated\IPDPlayerGeneratedResultNode.cs" />
+    <Compile Include="IPD\Players\IPDPlayer.cs" />
+    <Compile Include="IPD\Players\Generated\IPDPlayerGeneratedFactory.cs" />
+    <Compile Include="IPD\Players\IPDPlayerGenerated.cs" />
+    <Compile Include="IPD\Players\IPDPlayerPhenome.cs" />
+    <Compile Include="IPD\Players\IPDPlayerStatic.cs" />
     <Compile Include="NeatGenomeView.cs">
       <SubType>UserControl</SubType>
     </Compile>
