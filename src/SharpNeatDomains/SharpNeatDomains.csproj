@@ -125,7 +125,7 @@
     <Compile Include="IPD\IPDExperiment.cs" />
     <Compile Include="IPD\IPDGame.cs" />
     <Compile Include="IPD\Players\Generated\IPDPlayerGeneratedConditionalNode.cs" />
-    <Compile Include="IPD\Players\Generated\IPDPlayerGeneratedEvaluationResult.cs" />
+    <Compile Include="IPD\Players\Generated\IPDPlayerGeneratedTreeIterator.cs" />
     <Compile Include="IPD\Players\Generated\IPDPlayerGeneratedNode.cs" />
     <Compile Include="IPD\Players\Generated\IPDPlayerGeneratedResultNode.cs" />
     <Compile Include="IPD\Players\IPDPlayer.cs" />

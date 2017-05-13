@@ -8,10 +8,16 @@ namespace SharpNeat.Domains.IPD.Players
 {
     class IPDPlayerGenerated : IPDPlayer
     {
-        private Queue<IPDGame.Choices> _q = new Queue<IPDGame.Choices>();
-        private Generated.IPDPlayerGeneratedNode _e;
+        private Queue<IPDGame.Choices> _q;
+        private Generated.IPDPlayerGeneratedTreeIterator _tree;
 
-        public IPDGame.Choices FunctionQ
+        public delegate IPDGame.Choices[] QFunction(int alpha, int beta);
+
+        public IPDPlayerGenerated(Queue<IPDGame.Choices> initQ, Generated.IPDPlayerGeneratedTreeIterator tree)
+        {
+            _q = initQ;
+            _tree = tree;
+        }
 
         public override IPDGame.Choices Choice(IPDGame game)
         {
