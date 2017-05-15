@@ -328,6 +328,8 @@ Each test case is tested in turn. An output less than 0.5 is interpreted as a 0(
       <Description>
         TBD.
       </Description>
+      <Games>100</Games>
+      <OpponentsPool>AllC_Only</OpponentsPool>
 
     </Config>
   </Experiment>

@@ -16,6 +16,13 @@ namespace SharpNeat.Domains.IPD
 {
     class IPDExperiment : IGuiNeatExperiment
     {
+        public enum OpponentPool {
+            AllC_Only,
+            AllD_Only,
+            TripleThreat,   //AllC, AllD, TFT
+            TFTFails        //AllC, AllD, TFT, STFT
+        }
+
         private static readonly ILog __log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         NeatEvolutionAlgorithmParameters _eaParams;
@@ -28,6 +35,9 @@ namespace SharpNeat.Domains.IPD
         int? _complexityThreshold;
         string _description;
         ParallelOptions _parallelOptions;
+
+        int _numberOfGames;
+        OpponentPool _opponentPool;
 
         #region Constructor
 
@@ -112,6 +122,10 @@ namespace SharpNeat.Domains.IPD
             _activationScheme = ExperimentUtils.CreateActivationScheme(xmlConfig, "Activation");
             _complexityRegulationStr = XmlUtils.TryGetValueAsString(xmlConfig, "ComplexityRegulationStrategy");
             _complexityThreshold = XmlUtils.TryGetValueAsInt(xmlConfig, "ComplexityThreshold");
+
+            _numberOfGames = XmlUtils.GetValueAsInt(xmlConfig, "Games");
+            _opponentPool = (OpponentPool)System.Enum.Parse(typeof(OpponentPool), XmlUtils.GetValueAsString(xmlConfig, "OpponentsPool"), true);
+
             _description = XmlUtils.TryGetValueAsString(xmlConfig, "Description");
             _parallelOptions = ExperimentUtils.ReadParallelOptions(xmlConfig);
 
@@ -203,7 +217,7 @@ namespace SharpNeat.Domains.IPD
             NeatEvolutionAlgorithm<NeatGenome> ea = new NeatEvolutionAlgorithm<NeatGenome>(_eaParams, speciationStrategy, complexityRegulationStrategy);
 
             // Create IBlackBox evaluator.
-            IPDEvaluator evaluator = new IPDEvaluator();
+            IPDEvaluator evaluator = new IPDEvaluator(_numberOfGames, _opponentPool);
 
             // Create genome decoder.
             IGenomeDecoder<NeatGenome, IBlackBox> genomeDecoder = CreateGenomeDecoder();
