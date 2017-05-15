@@ -15,8 +15,11 @@ namespace SharpNeat.Domains.IPD.Players
         //each game fitness is calculated by comparing current output vector with counterstrategy vector. smaller difference > higher fitness, possibly with greater weight for earlier games.
         //SEE PAPER FOR IDEAS ON FITNESS FUNCTIONS ETC, PAGE 112
 
-        private IBlackBox _phenome;
         private const IPDGame.Choices FIRST_CHOICE = IPDGame.Choices.C;
+
+        public override string Name => "Phenome";
+
+        private IBlackBox _phenome;
 
         public IPDPlayerPhenome(IBlackBox phenome)
         {

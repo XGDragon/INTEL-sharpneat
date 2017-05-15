@@ -9,12 +9,17 @@ namespace SharpNeat.Domains.IPD.Players
 {
     class IPDPlayerGenerated : IPDPlayer
     {
+        public override string Name => _name;
+
+        private string _name;
         private Queue<IPDGame.Choices> _q = new Queue<IPDGame.Choices>();
         private DecisionTree _tree;
         private Object _choiceLock = new Object();
 
-        public IPDPlayerGenerated(DecisionTree tree, params IPDGame.Choices[] initQ)
+        public IPDPlayerGenerated(string name, DecisionTree tree, params IPDGame.Choices[] initQ)
         {
+            _name = name;
+
             if (initQ.Length == 0)
                 throw new Exception("Initialiation Q was empty!");
 

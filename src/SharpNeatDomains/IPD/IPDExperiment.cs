@@ -19,6 +19,7 @@ namespace SharpNeat.Domains.IPD
         public enum OpponentPool {
             AllC_Only,
             AllD_Only,
+            DoubleTrouble, //AllC, AllD
             TripleThreat,   //AllC, AllD, TFT
             TFTFails        //AllC, AllD, TFT, STFT
         }
@@ -37,7 +38,7 @@ namespace SharpNeat.Domains.IPD
         ParallelOptions _parallelOptions;
 
         int _numberOfGames;
-        OpponentPool _opponentPool;
+        IPDPlayer[] _opponentPool;
 
         #region Constructor
 
@@ -124,7 +125,7 @@ namespace SharpNeat.Domains.IPD
             _complexityThreshold = XmlUtils.TryGetValueAsInt(xmlConfig, "ComplexityThreshold");
 
             _numberOfGames = XmlUtils.GetValueAsInt(xmlConfig, "Games");
-            _opponentPool = (OpponentPool)System.Enum.Parse(typeof(OpponentPool), XmlUtils.GetValueAsString(xmlConfig, "OpponentsPool"), true);
+            _opponentPool = CreatePool((OpponentPool)System.Enum.Parse(typeof(OpponentPool), XmlUtils.GetValueAsString(xmlConfig, "OpponentsPool"), true));
 
             _description = XmlUtils.TryGetValueAsString(xmlConfig, "Description");
             _parallelOptions = ExperimentUtils.ReadParallelOptions(xmlConfig);
@@ -250,10 +251,41 @@ namespace SharpNeat.Domains.IPD
         /// </summary>
         public AbstractDomainView CreateDomainView()
         {
-            return null;
+            return new IPDGameView(CreateGenomeDecoder(), _numberOfGames, _opponentPool);
         }
 
         #endregion
+        
+        private IPDPlayer[] CreatePool(OpponentPool pool)
+        {
+            switch (pool)
+            {
+                case OpponentPool.AllC_Only:
+                    return new IPDPlayer[] { Players.IPDPlayerFactory.AllC };
+                case OpponentPool.AllD_Only:
+                    return new IPDPlayer[] { Players.IPDPlayerFactory.AllC };
+                case OpponentPool.DoubleTrouble:
+                    return new IPDPlayer[] {
+                        Players.IPDPlayerFactory.AllC,
+                        Players.IPDPlayerFactory.AllD
+                    };
+                case OpponentPool.TripleThreat:
+                    return new IPDPlayer[] {
+                        Players.IPDPlayerFactory.AllC,
+                        Players.IPDPlayerFactory.AllD,
+                        Players.IPDPlayerFactory.TFT
+                    };
+                case OpponentPool.TFTFails:
+                    return new IPDPlayer[] {
+                        Players.IPDPlayerFactory.AllC,
+                        Players.IPDPlayerFactory.AllD,
+                        Players.IPDPlayerFactory.TFT,
+                        Players.IPDPlayerFactory.STFT
+                    };
+                default:
+                    return new IPDPlayer[0];
+            }
+        }
     }
 }
 

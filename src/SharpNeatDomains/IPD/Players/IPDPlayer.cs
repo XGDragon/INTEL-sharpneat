@@ -10,6 +10,8 @@ namespace SharpNeat.Domains.IPD
     {
         protected static Random _r = new Random();
 
+        public abstract string Name { get; }
+
         private Dictionary<IPDPlayer, double> _scoreCard = new Dictionary<IPDPlayer, double>();
 
         public double TotalScore()
@@ -20,6 +22,11 @@ namespace SharpNeat.Domains.IPD
         public void AddScore(IPDPlayer opponent, double score)
         {
             _scoreCard.Add(opponent, score);
+        }
+
+        public override string ToString()
+        {
+            return Name;
         }
 
         public abstract IPDGame.Choices Choice(IPDGame game);

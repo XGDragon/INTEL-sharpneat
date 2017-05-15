@@ -11,6 +11,8 @@ namespace SharpNeat.Domains.IPD
         public enum Choices { C, D, R };
         public enum Past { None = -1, T = 5, R = 3, P = 1, S = 0 };
 
+        public IPDPlayer PlayerA { get { return _a.Player; } }
+        public IPDPlayer PlayerB { get { return _b.Player; } }
         public int T { get; private set; }
 
         private static Random _r = new Random();

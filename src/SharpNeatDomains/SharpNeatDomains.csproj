@@ -124,6 +124,12 @@
     <Compile Include="FunctionRegression\ParameterSamplingInfo.cs" />
     <Compile Include="FunctionRegression\FnRegressionExperiment.cs" />
     <Compile Include="INeatExperiment.cs" />
+    <Compile Include="IPD\IPDGameView.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="IPD\IPDGameView.Designer.cs">
+      <DependentUpon>IPDGameView.cs</DependentUpon>
+    </Compile>
     <Compile Include="IPD\Players\Tree\QFunction.cs" />
     <Compile Include="IPD\IPDEvaluator.cs" />
     <Compile Include="IPD\IPDExperiment.cs" />
@@ -136,6 +142,12 @@
     <Compile Include="IPD\Players\IPDPlayerFactory.cs" />
     <Compile Include="IPD\Players\IPDPlayerGenerated.cs" />
     <Compile Include="IPD\Players\IPDPlayerPhenome.cs" />
+    <Compile Include="IPD\UserControl1.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="IPD\UserControl1.Designer.cs">
+      <DependentUpon>UserControl1.cs</DependentUpon>
+    </Compile>
     <Compile Include="NeatGenomeView.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -179,6 +191,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="FunctionRegression\FnRegressionView2D.resx">
       <DependentUpon>FnRegressionView2D.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="IPD\UserControl1.resx">
+      <DependentUpon>UserControl1.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="NeatGenomeView.resx">
       <DependentUpon>NeatGenomeView.cs</DependentUpon>
