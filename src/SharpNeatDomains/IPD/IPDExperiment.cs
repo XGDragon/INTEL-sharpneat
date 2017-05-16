@@ -37,6 +37,7 @@ namespace SharpNeat.Domains.IPD
         string _description;
         ParallelOptions _parallelOptions;
 
+        int _pastInputReach;
         int _numberOfGames;
         IPDPlayer[] _opponentPool;
 
@@ -74,7 +75,7 @@ namespace SharpNeat.Domains.IPD
         /// </summary>
         public int InputCount
         {
-            get { return 7; }
+            get { return _pastInputReach * 2; }
         }
 
         /// <summary>
@@ -82,7 +83,7 @@ namespace SharpNeat.Domains.IPD
         /// </summary>
         public int OutputCount
         {
-            get { return 4; }
+            get { return 2; }
         }
 
         /// <summary>
@@ -126,6 +127,8 @@ namespace SharpNeat.Domains.IPD
 
             _numberOfGames = XmlUtils.GetValueAsInt(xmlConfig, "Games");
             _opponentPool = CreatePool((OpponentPool)System.Enum.Parse(typeof(OpponentPool), XmlUtils.GetValueAsString(xmlConfig, "OpponentsPool"), true));
+
+            _pastInputReach = XmlUtils.GetValueAsInt(xmlConfig, "PastInputReach");
 
             _description = XmlUtils.TryGetValueAsString(xmlConfig, "Description");
             _parallelOptions = ExperimentUtils.ReadParallelOptions(xmlConfig);
@@ -217,11 +220,11 @@ namespace SharpNeat.Domains.IPD
             // Create the evolution algorithm.
             NeatEvolutionAlgorithm<NeatGenome> ea = new NeatEvolutionAlgorithm<NeatGenome>(_eaParams, speciationStrategy, complexityRegulationStrategy);
 
-            // Create IBlackBox evaluator.
-            IPDEvaluator evaluator = new IPDEvaluator(_numberOfGames, _opponentPool);
-
             // Create genome decoder.
             IGenomeDecoder<NeatGenome, IBlackBox> genomeDecoder = CreateGenomeDecoder();
+
+            // Create IBlackBox evaluator.
+            IPDEvaluator evaluator = new IPDEvaluator(() => { return ea.CurrentGeneration; }, _numberOfGames, _opponentPool);
 
             // Create a genome list evaluator. This packages up the genome decoder with the genome evaluator.
             IGenomeListEvaluator<NeatGenome> innerEvaluator = new ParallelGenomeListEvaluator<NeatGenome, IBlackBox>(genomeDecoder, evaluator, _parallelOptions);
@@ -233,6 +236,7 @@ namespace SharpNeat.Domains.IPD
                                                                                     SelectiveGenomeListEvaluator<NeatGenome>.CreatePredicate_OnceOnly());
             // Initialize the evolution algorithm.
             ea.Initialize(selectiveEvaluator, genomeFactory, genomeList);
+         
 
             // Finished. Return the evolution algorithm
             return ea;
@@ -251,7 +255,7 @@ namespace SharpNeat.Domains.IPD
         /// </summary>
         public AbstractDomainView CreateDomainView()
         {
-            return new IPDGameView(CreateGenomeDecoder(), _numberOfGames, _opponentPool);
+            return new IPDGameTable(CreateGenomeDecoder(), _numberOfGames, _opponentPool);
         }
 
         #endregion

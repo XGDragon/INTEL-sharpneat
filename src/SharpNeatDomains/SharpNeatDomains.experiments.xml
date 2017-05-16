@@ -16,7 +16,8 @@
         TBD.
       </Description>
       <Games>100</Games>
-      <OpponentsPool>TripleThreat</OpponentsPool>
+      <OpponentsPool>TFTFails</OpponentsPool>
+      <PastInputReach>5</PastInputReach>
 
     </Config>
   </Experiment>

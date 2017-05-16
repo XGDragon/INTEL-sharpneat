@@ -12,6 +12,7 @@ namespace SharpNeat.Domains.IPD.Players
         public override string Name => _name;
 
         private string _name;
+        private IPDGame.Choices[] _initQ;
         private Queue<IPDGame.Choices> _q = new Queue<IPDGame.Choices>();
         private DecisionTree _tree;
         private Object _choiceLock = new Object();
@@ -23,7 +24,7 @@ namespace SharpNeat.Domains.IPD.Players
             if (initQ.Length == 0)
                 throw new Exception("Initialiation Q was empty!");
 
-            FillQueue(initQ);
+            _initQ = initQ;
             _tree = tree;
         }
 
@@ -32,13 +33,14 @@ namespace SharpNeat.Domains.IPD.Players
             IPDGame.Choices r;
             lock (_choiceLock)
             {
+                if (game.T == 0)
+                    FillQueue(_initQ);
                 if (_q.Count == 0)
                     FillQueue(_tree.Run(this, game));
                 if (_q.Count == 0)
                     throw new Exception("Q is still empty?");
                 r = _q.Dequeue();
             }
-
             return r;
         }
 

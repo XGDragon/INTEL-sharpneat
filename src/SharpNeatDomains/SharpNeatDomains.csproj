@@ -41,6 +41,9 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="CsvHelper, Version=2.0.0.0, Culture=neutral, PublicKeyToken=8c4959082be5c823, processorArchitecture=MSIL">
+      <HintPath>..\packages\CsvHelper.2.16.3.0\lib\net45\CsvHelper.dll</HintPath>
+    </Reference>
     <Reference Include="log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
       <Private>True</Private>
@@ -124,11 +127,11 @@
     <Compile Include="FunctionRegression\ParameterSamplingInfo.cs" />
     <Compile Include="FunctionRegression\FnRegressionExperiment.cs" />
     <Compile Include="INeatExperiment.cs" />
-    <Compile Include="IPD\IPDGameView.cs">
+    <Compile Include="IPD\IPDGameTable.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="IPD\IPDGameView.Designer.cs">
-      <DependentUpon>IPDGameView.cs</DependentUpon>
+    <Compile Include="IPD\IPDGameTable.Designer.cs">
+      <DependentUpon>IPDGameTable.cs</DependentUpon>
     </Compile>
     <Compile Include="IPD\Players\Tree\QFunction.cs" />
     <Compile Include="IPD\IPDEvaluator.cs" />
@@ -142,12 +145,6 @@
     <Compile Include="IPD\Players\IPDPlayerFactory.cs" />
     <Compile Include="IPD\Players\IPDPlayerGenerated.cs" />
     <Compile Include="IPD\Players\IPDPlayerPhenome.cs" />
-    <Compile Include="IPD\UserControl1.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="IPD\UserControl1.Designer.cs">
-      <DependentUpon>UserControl1.cs</DependentUpon>
-    </Compile>
     <Compile Include="NeatGenomeView.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -191,9 +188,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="FunctionRegression\FnRegressionView2D.resx">
       <DependentUpon>FnRegressionView2D.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="IPD\UserControl1.resx">
-      <DependentUpon>UserControl1.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="NeatGenomeView.resx">
       <DependentUpon>NeatGenomeView.cs</DependentUpon>

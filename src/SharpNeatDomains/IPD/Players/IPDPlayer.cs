@@ -12,18 +12,6 @@ namespace SharpNeat.Domains.IPD
 
         public abstract string Name { get; }
 
-        private Dictionary<IPDPlayer, double> _scoreCard = new Dictionary<IPDPlayer, double>();
-
-        public double TotalScore()
-        {
-            return _scoreCard.Sum(c => c.Value);
-        }
-
-        public void AddScore(IPDPlayer opponent, double score)
-        {
-            _scoreCard.Add(opponent, score);
-        }
-
         public override string ToString()
         {
             return Name;

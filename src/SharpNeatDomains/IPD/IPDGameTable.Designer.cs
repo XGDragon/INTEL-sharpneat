@@ -1,6 +1,6 @@
 ﻿namespace SharpNeat.Domains.IPD
 {
-    partial class IPDGameView
+    partial class IPDGameTable
     {
         /// <summary> 
         /// Required designer variable.

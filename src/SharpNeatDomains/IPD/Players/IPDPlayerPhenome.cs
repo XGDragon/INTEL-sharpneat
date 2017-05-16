@@ -16,6 +16,7 @@ namespace SharpNeat.Domains.IPD.Players
         //SEE PAPER FOR IDEAS ON FITNESS FUNCTIONS ETC, PAGE 112
 
         private const IPDGame.Choices FIRST_CHOICE = IPDGame.Choices.C;
+        //private readonly IPDGame.Past[] _pastToI = new IPDGame.Past[4] { IPDGame.Past.T, IPDGame.Past.R, IPDGame.Past.P, IPDGame.Past.S };
 
         public override string Name => "Phenome";
 
@@ -31,9 +32,16 @@ namespace SharpNeat.Domains.IPD.Players
             if (game.T == 0)
                 return FIRST_CHOICE;
 
-            for (int i = 0, k = 1; i < _phenome.InputSignalArray.Length; i++, k++)
-                _phenome.InputSignalArray[i] = PastToInput(game.GetPast(this, game.T - k));
-
+            int i = 0;
+            for (int k = 1; k <= _phenome.InputSignalArray.Length / 2; k++)
+            {
+                IPDGame.Past p = game.GetPast(this, game.T - k);
+                //My choice (0 == C, 1 == D)
+                _phenome.InputSignalArray[i++] = (p == IPDGame.Past.R || p == IPDGame.Past.S) ? 0 : 1;
+                //Opponent choice
+                _phenome.InputSignalArray[i++] = (p == IPDGame.Past.T || p == IPDGame.Past.R) ? 0 : 1;
+            }
+            
             _phenome.Activate();
             if (!_phenome.IsStateValid)
             {   // Any black box that gets itself into an invalid state is unlikely to be
@@ -41,10 +49,7 @@ namespace SharpNeat.Domains.IPD.Players
                 return IPDGame.Choices.R;
             }
             
-            //take the output index equal to the most recent past outcome
-            double output = _phenome.OutputSignalArray[PastToOutput(game.GetPast(this, game.T - 1))];
-            //0.0 = D, because _r < 0.0 is always : D
-            return (_r.NextDouble() < output) ? IPDGame.Choices.C : IPDGame.Choices.D;
+            return (_phenome.OutputSignalArray[0] > _phenome.OutputSignalArray[1]) ? IPDGame.Choices.C : IPDGame.Choices.D;
         }
 
         private double PastToInput(IPDGame.Past past)

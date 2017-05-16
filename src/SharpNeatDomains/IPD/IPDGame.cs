@@ -10,28 +10,26 @@ namespace SharpNeat.Domains.IPD
     {
         public enum Choices { C, D, R };
         public enum Past { None = -1, T = 5, R = 3, P = 1, S = 0 };
-
-        public IPDPlayer PlayerA { get { return _a.Player; } }
-        public IPDPlayer PlayerB { get { return _b.Player; } }
+        
         public int T { get; private set; }
+
+        public int Length { get; private set; }
 
         private static Random _r = new Random();
 
         private PlayerCard _a;
         private PlayerCard _b;
 
-        private int _maxGames;
-
         public IPDGame(int numberOfGames, IPDPlayer a, IPDPlayer b)
         {
             _a = new PlayerCard(a, numberOfGames);
             _b = new PlayerCard(b, numberOfGames);
-            _maxGames = numberOfGames;
+            Length = numberOfGames;
         }
 
-        public void Run(bool ignoreScore = false)
+        public void Run()
         {
-            while (T < _maxGames)
+            while (T < Length)
             {
                 Choices a = _a.Player.Choice(this);
                 Choices b = _b.Player.Choice(this);
@@ -42,10 +40,6 @@ namespace SharpNeat.Domains.IPD
                 _b.AddPast(b, a);
                 T++;
             }
-
-            _a.Player.AddScore(_b.Player, _a.Score);
-            if (!ignoreScore)
-                _b.Player.AddScore(_a.Player, _b.Score);
         }
 
         private Choices RandomChoice()
@@ -55,11 +49,18 @@ namespace SharpNeat.Domains.IPD
 
         public Past GetPast(IPDPlayer ab, int time)
         {
-            if (time < 0)
+            if (time < 0 || (ab != _a.Player && ab != _b.Player))
                 return Past.None;
 
             int t = (time > T) ? T : time;
             return (ab == _a.Player) ? _a[t] : _b[t];
+        }
+
+        public double GetScore(IPDPlayer ab)
+        {
+            if (ab != _a.Player && ab != _b.Player)
+                return 0;
+            return (ab == _a.Player) ? _a.Score : _b.Score;
         }
 
         private struct PlayerCard
