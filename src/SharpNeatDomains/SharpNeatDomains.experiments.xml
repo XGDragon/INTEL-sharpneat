@@ -17,7 +17,7 @@
       </Description>
       <Games>100</Games>
       <OpponentsPool>TFTFails</OpponentsPool>
-      <PastInputReach>5</PastInputReach>
+      <PastInputReach>3</PastInputReach>
 
     </Config>
   </Experiment>
