@@ -224,7 +224,7 @@ namespace SharpNeat.Domains.IPD
             IGenomeDecoder<NeatGenome, IBlackBox> genomeDecoder = CreateGenomeDecoder();
 
             // Create IBlackBox evaluator.
-            IPDEvaluator evaluator = new IPDEvaluator(() => { return ea.CurrentGeneration; }, InputCount, _numberOfGames, _opponentPool);
+            IPDEvaluator evaluator = new IPDEvaluator(() => { return ea.CurrentGeneration; }, (InputCount, OutputCount), _numberOfGames, _opponentPool);
 
             // Create a genome list evaluator. This packages up the genome decoder with the genome evaluator.
             IGenomeListEvaluator<NeatGenome> innerEvaluator = new ParallelGenomeListEvaluator<NeatGenome, IBlackBox>(genomeDecoder, evaluator, _parallelOptions);

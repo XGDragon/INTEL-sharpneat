@@ -27,15 +27,24 @@ namespace SharpNeat.Domains.IPD
         
         int _numberOfGames;
         IPDPlayer[] _players;
+
+        int _currentGeneration;
         CurrentGeneration _generation;
 
-        public IPDEvaluator(CurrentGeneration generationGetter, int inputLength, int numberOfGames, params IPDPlayer[] pool)
+        Object _behaviorLock;
+        List<List<Behavior>> _behaviorArchive;
+
+        public IPDEvaluator(CurrentGeneration generationGetter, (int, int) io, int numberOfGames, params IPDPlayer[] pool)
         {
             _generation = generationGetter;
+            _currentGeneration = (int)_generation();
+
             _numberOfGames = numberOfGames;
             _players = pool;
 
-            Behavior.InitializeNovelty(inputLength);
+            Behavior.InitializeNovelty(io);
+            _behaviorLock = new Object();
+            _behaviorArchive = new List<List<Behavior>>() { new List<Behavior>() };
             //(0.5)(n - 1)n
         }
 
@@ -77,68 +86,86 @@ namespace SharpNeat.Domains.IPD
             return score.Sum();
         }
 
-        private Dictionary<uint, List<Behavior>> _behaviorPerGeneration = new Dictionary<uint, List<Behavior>>();
-        private Object _listLock = new Object();
-
+        private const int NOVELTY_CULL = 5;
+        
         private double EvaluateNovelty(IBlackBox box)
         {
             if (false)//MIX == 1.0)
                 return 0;
+            
+            int gen = (int)_generation();
+            lock (_behaviorLock)
+            {
+                if (gen > _currentGeneration)
+                {
+                    _behaviorArchive[_currentGeneration].Sort();
+                    List<Behavior> newList = new List<Behavior>();
+                    for (int i = 0; i < NOVELTY_CULL; i++)
+                        newList[i] = _behaviorArchive[_currentGeneration][i];
+                    _behaviorArchive[_currentGeneration] = newList;
+
+                    _currentGeneration = gen;
+                    _behaviorArchive.Add(new List<Behavior>());
+                }
+            }
+
 
             //http://eplex.cs.ucf.edu/noveltysearch/userspage/#howtoimplement
             //http://eplex.cs.ucf.edu/papers/lehman_cec11.pdf 3/8
 
-            uint gen = _generation();
-            lock (_listLock)
+            Behavior b = new Behavior(box);
+            _behaviorArchive[gen].Add(b);
+
+            for (int i = 0; i < _currentGeneration; i++)
             {
-                if (!_behaviorPerGeneration.ContainsKey(gen))
-                {
-                    _behaviorPerGeneration.Add(gen, new List<Behavior>());
-                    if (gen != 0)
-                    {
-                        //remove all but the most prominent behaviors (thin the clusters)
-                        //maximum distance is equal to inputCount
-                        var l = _behaviorPerGeneration[gen - 1];
-                        
-                    }
-                }
+                for (int j = 0; j < _behaviorArchive[i].Count; j++)
+                    b.Novelty += _behaviorArchive[i][j].DistanceTo(b);
             }
 
-            Behavior b = new Behavior(box);
             //http://accord-framework.net/docs/html/T_Accord_MachineLearning_KNearestNeighbors_1.htm
-            //Accord.MachineLearning.KNearestNeighbors k 
 
             //MathNet.Numerics.Distance.SAD()
             //check behavior for each possible input state?
             //somehow create a distance metric from the resulting vector
             //remember interesting metrics to create k-distance measuring thing
 
+            //consider 4 inputs, S_-1, O_-1, S_-2, O_-2 => 2^4 = 16 combinations
+            //a behavior is then the output for each of those combinations => 16 arrays of { C, D }
+
+            //OPTION A: 
+            //  we flatten the combinations to an kdTree with 32 dimensions. 
+            //  kmeans sparseness is novelty.
+            //OPTION B: << current choice
+            //  for each S_n, O_n pair create seperate tree kdTree_n (2^2 = 4 combinations, flatten outputs to 8 dimensions)
+            //  kmeans sparseness per kdTree_n. sum is novelty, but can adjust with weights possibly
+            //  archive each kdTree_n in a seperate generation
+
             //remember sparse individuals in an archive by generation..
-            return 0;
+            return b.Novelty;
         }
         
         public void Reset()
         {
-
+            int d = 0;
         }
 
-        private struct Behavior
+        private class Behavior : IComparable<Behavior>
         {
+            private static (int input, int output) _io;
             private static double[][] _permutations;
-            private static double _maxDistance;
 
             private double[] _behaviors;
-            //private MathNet.Numerics.Distance d
+            public double Novelty { get; set; }
 
             public Behavior(IBlackBox box)
             {
-                _behaviors = new double[_permutations.Length * box.OutputCount];    //length * 2
-                for (int i = 0, b = 0; i < _permutations.Length; i++, b += 2)
+                _behaviors = new double[_permutations.Length * _io.output];
+
+                int b = 0;
+                for (int i = 0; i < _permutations.Length; i++, b += 2)
                 {
                     box.ResetState();
                     box.InputSignalArray.CopyFrom(_permutations[i], 0);
-                    //for (int j = 0; i < _permutations[i].Length; j++)
-                    //    box.InputSignalArray[j] = _permutations[i][j];
 
                     box.Activate();
                     if (!box.IsStateValid)
@@ -148,26 +175,62 @@ namespace SharpNeat.Domains.IPD
                 }
             }
 
-            public static double CalculateDistance(Behavior a, Behavior b)
+            public double DistanceTo(Behavior b)
             {
-                return Distance.SAD(a._behaviors, b._behaviors);
+                return MathNet.Numerics.Distance.SAD(this._behaviors, b._behaviors);
             }
 
-            public static void InitializeNovelty(int length)
+            public static void InitializeNovelty((int input, int output) io)
             {
-                int max = (int)System.Math.Pow(2, length);
+                _io = io;
+
+                InitializePermutations();
+                //InitializeForest();
+            }
+
+            private static void InitializePermutations()
+            {
+                int max = (int)System.Math.Pow(2, _io.input);
                 _permutations = new double[max][];
                 for (int i = 0; i < max; i++)
                 {
-                    _permutations[i] = new double[length];
+                    _permutations[i] = new double[_io.input];
                     int b = i;
-                    for (int j = length - 1; j >= 0; j--)
+                    for (int j = _io.input - 1; j >= 0; j--)
                     {
                         _permutations[i][j] = b % 2;
                         b /= 2;
                     }
                 }
             }
+
+            public int CompareTo(Behavior other)
+            {
+                if (this.Novelty > other.Novelty)
+                    return 1;
+                else if (this.Novelty < other.Novelty)
+                    return -1;
+                else
+                    return 0;
+            }
+
+            //private static void InitializeForest()
+            //{
+            //    _forest = new List<Accord.Collections.KDTree<double>[]>();
+
+            //    NewTreeForest();
+            //}
+
+            //public static void NewTreeForest()
+            //{
+            //    //input / 2 gives the "reach" of the NN, which equals the number of trees
+            //    _forest.Add(new Accord.Collections.KDTree<double>[_io.input / 2]);
+            //    int forestEnd = _forest.Count - 1;
+
+            //    //Always 8, because 2^2 inputs has 4 combinations which generate 2 outputs each (2 * 4 = 8)
+            //    for (int i = 0; i < _forest[forestEnd].Length; i++)
+            //        _forest[forestEnd][i] = new Accord.Collections.KDTree<double>(8);
+            //}
         }
     }
 }
