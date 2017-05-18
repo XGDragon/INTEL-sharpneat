@@ -135,11 +135,11 @@ namespace SharpNeat.Domains.IPD.Players.Tree
                 _repeats = repeats;
             }
 
-            public Piece(IPDGame.Choices choice, Values alphaBeta)
+            public Piece(IPDGame.Choices choice, Values alphaBeta, int repeats = 0)
             {
                 _value = alphaBeta;
                 Choice = choice;
-                _repeats = 0;
+                _repeats = repeats;
             }
 
             public int Repeats(int alpha, int beta)

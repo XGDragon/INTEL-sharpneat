@@ -224,7 +224,7 @@ namespace SharpNeat.Domains.IPD
             IGenomeDecoder<NeatGenome, IBlackBox> genomeDecoder = CreateGenomeDecoder();
 
             // Create IBlackBox evaluator.
-            IPDEvaluator evaluator = new IPDEvaluator(() => { return ea.CurrentGeneration; }, (InputCount, OutputCount), _numberOfGames, _opponentPool);
+            IPDEvaluator evaluator = new IPDEvaluator(new Info(this, ea, genomeDecoder));
 
             // Create a genome list evaluator. This packages up the genome decoder with the genome evaluator.
             IGenomeListEvaluator<NeatGenome> innerEvaluator = new ParallelGenomeListEvaluator<NeatGenome, IBlackBox>(genomeDecoder, evaluator, _parallelOptions);
@@ -288,6 +288,43 @@ namespace SharpNeat.Domains.IPD
                     };
                 default:
                     return new IPDPlayer[0];
+            }
+        }
+
+        public struct Info
+        {
+            public int InputCount { get { return _exp.InputCount; } }
+            public int OutputCount { get { return _exp.OutputCount; } }
+
+            public IPDPlayer[] OpponentPool { get { return _exp._opponentPool; } }
+            public int NumberOfGames { get { return _exp._numberOfGames; } }
+
+            public int PopulationSize { get { return _exp._populationSize; } }
+            public int CurrentGeneration { get { return (int)_genGet(); } }
+            public IBlackBox BestGenome { get { return _boxGet(); } }
+
+            private IPDExperiment _exp;
+            private System.Func<uint> _genGet;
+            private System.Func<IBlackBox> _boxGet;
+            private uint _current;
+
+            public Info(IPDExperiment exp, NeatEvolutionAlgorithm<NeatGenome> ea, IGenomeDecoder<NeatGenome, IBlackBox> decoder)
+            {
+                _exp = exp;
+                _genGet = () => { return ea.CurrentGeneration; };
+                _boxGet = () => { return decoder.Decode(ea.CurrentChampGenome); };
+                _current = _genGet();
+            }
+
+            public bool HasNewGenerationOccured()
+            {
+                uint g = _genGet();
+                if (_current != g)
+                {
+                    _current = g;
+                    return true;
+                }
+                return false;
             }
         }
     }
