@@ -12,7 +12,8 @@ namespace SharpNeat.Domains.IPD
 {
     class IPDEvaluator : IPhenomeEvaluator<IBlackBox>
     {
-        private const int ARCHIVE_MAX_SIZE = 100;
+        private const int ARCHIVE_MAX_SIZE = 200;
+        private const bool ALLOW_NOVELTY = true;
 
         public ulong EvaluationCount { get; private set; }
 
@@ -42,7 +43,7 @@ namespace SharpNeat.Domains.IPD
         {            
             EvaluationCount++;
 
-            _noveltyMode = (_archive.Count == ARCHIVE_MAX_SIZE && _info.CurrentGeneration > ARCHIVE_MAX_SIZE * 2);
+            _noveltyMode = (ALLOW_NOVELTY && _archive.Count == ARCHIVE_MAX_SIZE && _info.CurrentGeneration > ARCHIVE_MAX_SIZE * 2);
 
             double objectiveFitness = EvaluateObjectively(phenome);
             double noveltyFitness = EvaluateNovelty(phenome);

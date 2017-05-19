@@ -16,12 +16,12 @@ namespace SharpNeat.Domains.IPD
 {
     class IPDExperiment : IGuiNeatExperiment
     {
-        public enum OpponentPool {
-            AllC_Only,
-            AllD_Only,
-            DoubleTrouble, //AllC, AllD
-            TripleThreat,   //AllC, AllD, TFT
-            TFTFails        //AllC, AllD, TFT, STFT
+        public enum Opponent
+        {
+            AllC,
+            AllD,
+            TFT,
+            STFT
         }
 
         private static readonly ILog __log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
@@ -125,9 +125,12 @@ namespace SharpNeat.Domains.IPD
             _complexityRegulationStr = XmlUtils.TryGetValueAsString(xmlConfig, "ComplexityRegulationStrategy");
             _complexityThreshold = XmlUtils.TryGetValueAsInt(xmlConfig, "ComplexityThreshold");
 
-            _numberOfGames = XmlUtils.GetValueAsInt(xmlConfig, "Games");
-            _opponentPool = CreatePool((OpponentPool)System.Enum.Parse(typeof(OpponentPool), XmlUtils.GetValueAsString(xmlConfig, "OpponentsPool"), true));
-
+            _numberOfGames = XmlUtils.GetValueAsInt(xmlConfig, "IPDGames");
+            int seed = XmlUtils.GetValueAsInt(xmlConfig, "RandomPlayerSeed");
+            int randoms = XmlUtils.GetValueAsInt(xmlConfig, "RandomPlayerCount");
+            string[] opps = XmlUtils.GetValueAsString(xmlConfig, "StaticOpponents").Split(',');
+            _opponentPool = _CreatePool(seed, randoms, System.Array.ConvertAll(opps, (string o) => { return (Opponent)System.Enum.Parse(typeof(Opponent), o, true); }));
+            
             _pastInputReach = XmlUtils.GetValueAsInt(xmlConfig, "PastInputReach");
 
             _description = XmlUtils.TryGetValueAsString(xmlConfig, "Description");
@@ -259,36 +262,29 @@ namespace SharpNeat.Domains.IPD
         }
 
         #endregion
-        
-        private IPDPlayer[] CreatePool(OpponentPool pool)
+
+        private IPDPlayer[] _CreatePool(int seed, int randoms, params Opponent[] opponents)
         {
-            switch (pool)
+            Players.IPDPlayerFactory pf = new Players.IPDPlayerFactory(seed);
+            var pool = new IPDPlayer[randoms + opponents.Length];
+            for (int i = 0; i < randoms; i++)
+                pool[i] = pf.Random();
+            for (int i = randoms, j = 0; i < pool.Length; i++, j++)
             {
-                case OpponentPool.AllC_Only:
-                    return new IPDPlayer[] { Players.IPDPlayerFactory.AllC };
-                case OpponentPool.AllD_Only:
-                    return new IPDPlayer[] { Players.IPDPlayerFactory.AllC };
-                case OpponentPool.DoubleTrouble:
-                    return new IPDPlayer[] {
-                        Players.IPDPlayerFactory.AllC,
-                        Players.IPDPlayerFactory.AllD
-                    };
-                case OpponentPool.TripleThreat:
-                    return new IPDPlayer[] {
-                        Players.IPDPlayerFactory.AllC,
-                        Players.IPDPlayerFactory.AllD,
-                        Players.IPDPlayerFactory.TFT
-                    };
-                case OpponentPool.TFTFails:
-                    return new IPDPlayer[] {
-                        Players.IPDPlayerFactory.AllC,
-                        Players.IPDPlayerFactory.AllD,
-                        Players.IPDPlayerFactory.TFT,
-                        Players.IPDPlayerFactory.STFT
-                    };
-                default:
-                    return new IPDPlayer[0];
+                switch (opponents[j])
+                {
+                    case Opponent.AllC:
+                        pool[i] = Players.IPDPlayerFactory.AllC; break;
+                    case Opponent.AllD:
+                        pool[i] = Players.IPDPlayerFactory.AllD; break;
+                    case Opponent.TFT:
+                        pool[i] = Players.IPDPlayerFactory.TFT; break;
+                    case Opponent.STFT:
+                    default:
+                        pool[i] = Players.IPDPlayerFactory.STFT; break;
+                }
             }
+            return pool;
         }
 
         public struct Info

@@ -11,6 +11,8 @@ namespace SharpNeat.Domains.IPD.Players.Tree
     /// </summary>
     class QFunction
     {
+        public enum Values { Alpha, Beta, Number }
+
         public static QFunction Default => new QFunction(new QFunctionSequence(IPDGame.Choices.R));
 
         private bool _hasCond = false;
@@ -40,42 +42,40 @@ namespace SharpNeat.Domains.IPD.Players.Tree
 
     struct QFunctionConditional
     {
-        public enum Values { Alpha, Beta, Number }
+        private (QFunction.Values, int) _left;
+        private (QFunction.Values, int) _right;
 
-        private (Values, int) _left;
-        private (Values, int) _right;
-
-        public QFunctionConditional(Values left, Values right)
+        public QFunctionConditional(QFunction.Values left, QFunction.Values right)
         {
             _left = (left, -1);
             _right = (right, -1);
         }
 
-        public QFunctionConditional(Values left, int right)
+        public QFunctionConditional(QFunction.Values left, int right)
         {
             _left = (left, -1);
-            _right = (Values.Number, right);
+            _right = (QFunction.Values.Number, right);
         }
 
-        public QFunctionConditional(int left, Values right)
+        public QFunctionConditional(int left, QFunction.Values right)
         {
-            _left = (Values.Number, left);
+            _left = (QFunction.Values.Number, left);
             _right = (right, -1);
         }
 
         public QFunctionConditional(int left, int right)
         {
-            _left = (Values.Number, left);
-            _right = (Values.Number, right);
+            _left = (QFunction.Values.Number, left);
+            _right = (QFunction.Values.Number, right);
         }
 
         public bool Evaluate(int alpha, int beta)
         {
-            int GetValue((Values, int) v)
+            int GetValue((QFunction.Values, int) v)
             {
-                if (v.Item1 == Values.Alpha)
+                if (v.Item1 == QFunction.Values.Alpha)
                     return alpha;
-                if (v.Item1 == Values.Beta)
+                if (v.Item1 == QFunction.Values.Beta)
                     return beta;
                 return v.Item2;
             }
@@ -115,27 +115,28 @@ namespace SharpNeat.Domains.IPD.Players.Tree
                     for (int j = 0; j < r; j++)
                         c.Add(_pieces[i].Choice);
                 }
-                return c.ToArray();
+                if (c.Count > 0)
+                    return c.ToArray();
+                else
+                    return new IPDGame.Choices[] { _pieces[0].Choice };
             }
             else return _choices;
         }
 
         public struct Piece
         {
-            public enum Values { Alpha, Beta, Number }
-
-            private Values _value;
+            private QFunction.Values _value;
             public IPDGame.Choices Choice { get; private set; }
             private int _repeats;
 
             public Piece(IPDGame.Choices choice, int repeats)
             {
-                _value = Values.Number;
+                _value = QFunction.Values.Number;
                 Choice = choice;
                 _repeats = repeats;
             }
 
-            public Piece(IPDGame.Choices choice, Values alphaBeta, int repeats = 0)
+            public Piece(IPDGame.Choices choice, QFunction.Values alphaBeta, int repeats = 0)
             {
                 _value = alphaBeta;
                 Choice = choice;
@@ -144,9 +145,9 @@ namespace SharpNeat.Domains.IPD.Players.Tree
 
             public int Repeats(int alpha, int beta)
             {
-                if (_value == Values.Number)
+                if (_value == QFunction.Values.Number)
                     return _repeats;
-                return (_value == Values.Alpha) ? alpha : beta;
+                return (_value == QFunction.Values.Alpha) ? alpha : beta;
             }
         }
     }

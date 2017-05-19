@@ -35,13 +35,13 @@ namespace SharpNeat.Domains.IPD.Players.Tree
         private int _k;
         private IPDGame.Past[] _x;
 
-        public PayoffConditionalNode(int left, int right, int k, params IPDGame.Past[] x) : base(left, right)
+        public PayoffConditionalNode(int leftNode, int rightNode, int k, params IPDGame.Past[] x) : base(leftNode, rightNode)
         {            
             _k = k;
             _x = x;
         }
 
-        public PayoffConditionalNode(int left, int right, int k, int a = 0, int b = 0, params IPDGame.Past[] x) : base(left, right, a, b)
+        public PayoffConditionalNode(int leftNode, int rightNode, int k, int a = 0, int b = 0, params IPDGame.Past[] x) : base(leftNode, rightNode, a, b)
         {
             _k = k;
             _x = x;
@@ -69,24 +69,21 @@ namespace SharpNeat.Domains.IPD.Players.Tree
 
     class ValueConditionalNode : ConditionalNode
     {
-        private int _u;
-        private int _v;
+        QFunctionConditional _cond;
 
-        public ValueConditionalNode(int left, int right, int u, int v) : base(left, right)
+        public ValueConditionalNode(int left, int right, QFunctionConditional cond) : base(left, right)
         {
-            _u = u;
-            _v = v;
+            _cond = cond;
         }
 
-        public ValueConditionalNode(int left, int right, int u, int v, int a = 0, int b = 0) : base(left, right, a, b)
+        public ValueConditionalNode(int left, int right, QFunctionConditional cond, int a = 0, int b = 0) : base(left, right, a, b)
         {
-            _u = u;
-            _v = v;
+            _cond = cond;
         }
 
         public override int Evaluate(DecisionTree.Iterator iterator, IPDGame game)
         {
-            if (_u <= _v)
+            if (_cond.Evaluate(iterator.Alpha, iterator.Beta))
             {
                 iterator.Alpha += _alphaAdd;
                 return _left;

@@ -15,8 +15,17 @@
       <Description>
         TBD.
       </Description>
-      <Games>100</Games>
-      <OpponentsPool>TFTFails</OpponentsPool>
+      <IPDGames>100</IPDGames>
+      <RandomPlayerSeed>98465</RandomPlayerSeed>
+      <RandomPlayerCount>100</RandomPlayerCount>
+      <StaticOpponents>AllC,AllD,TFT,STFT</StaticOpponents>
+      <!--
+          AllC,
+          AllD,
+          TFT,
+          STFT
+        -->
+      
       <PastInputReach>3</PastInputReach>
 
     </Config>
