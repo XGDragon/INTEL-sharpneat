@@ -20,8 +20,24 @@ namespace SharpNeat.Domains.IPD
         {
             AllC,
             AllD,
+            AllR,
             TFT,
-            STFT
+            STFT,
+            Grudger
+        }
+
+        public enum NoveltyEvaluationMode
+        {
+            Disable,
+            Immediate,
+            ArchiveFull,
+            SlowArchiveFull
+        }
+
+        public enum ObjectiveEvaluationMode
+        {
+            Fitness,
+            Rank
         }
 
         private static readonly ILog __log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
@@ -40,6 +56,11 @@ namespace SharpNeat.Domains.IPD
         int _pastInputReach;
         int _numberOfGames;
         IPDPlayer[] _opponentPool;
+        int _noveltyArchiveSize;
+        NoveltyEvaluationMode _noveltyEvaluationMode;
+        ObjectiveEvaluationMode _objectiveEvaluationMode;
+
+        Info _info;
 
         #region Constructor
 
@@ -118,6 +139,12 @@ namespace SharpNeat.Domains.IPD
         /// </summary>
         public void Initialize(string name, XmlElement xmlConfig)
         {
+            T GetValueAsEnum<T>(string e)
+            {
+                string r = XmlUtils.GetValueAsString(xmlConfig, e);
+                return (T)System.Enum.Parse(typeof(T), r);
+            }
+
             _name = name;
             _populationSize = XmlUtils.GetValueAsInt(xmlConfig, "PopulationSize");
             _specieCount = XmlUtils.GetValueAsInt(xmlConfig, "SpecieCount");
@@ -131,6 +158,10 @@ namespace SharpNeat.Domains.IPD
             string[] opps = XmlUtils.GetValueAsString(xmlConfig, "StaticOpponents").Split(',');
             _opponentPool = _CreatePool(seed, randoms, System.Array.ConvertAll(opps, (string o) => { return (Opponent)System.Enum.Parse(typeof(Opponent), o, true); }));
             
+            _noveltyArchiveSize = XmlUtils.GetValueAsInt(xmlConfig, "NoveltyArchiveSize");
+            _noveltyEvaluationMode = GetValueAsEnum<NoveltyEvaluationMode>("NoveltyEvaluationMode");
+            _objectiveEvaluationMode = GetValueAsEnum<ObjectiveEvaluationMode>("ObjectiveEvaluationMode");
+
             _pastInputReach = XmlUtils.GetValueAsInt(xmlConfig, "PastInputReach");
 
             _description = XmlUtils.TryGetValueAsString(xmlConfig, "Description");
@@ -227,7 +258,7 @@ namespace SharpNeat.Domains.IPD
             IGenomeDecoder<NeatGenome, IBlackBox> genomeDecoder = CreateGenomeDecoder();
 
             // Create IBlackBox evaluator.
-            IPDEvaluator evaluator = new IPDEvaluator(new Info(this, ea, genomeDecoder));
+            IPDEvaluator evaluator = new IPDEvaluator(_info = new Info(this, ea, genomeDecoder));
 
             // Create a genome list evaluator. This packages up the genome decoder with the genome evaluator.
             IGenomeListEvaluator<NeatGenome> innerEvaluator = new ParallelGenomeListEvaluator<NeatGenome, IBlackBox>(genomeDecoder, evaluator, _parallelOptions);
@@ -258,7 +289,7 @@ namespace SharpNeat.Domains.IPD
         /// </summary>
         public AbstractDomainView CreateDomainView()
         {
-            return new IPDGameTable(CreateGenomeDecoder(), _numberOfGames, _opponentPool);
+            return new IPDGameTable(CreateGenomeDecoder(), _info);
         }
 
         #endregion
@@ -270,20 +301,7 @@ namespace SharpNeat.Domains.IPD
             for (int i = 0; i < randoms; i++)
                 pool[i] = pf.Random();
             for (int i = randoms, j = 0; i < pool.Length; i++, j++)
-            {
-                switch (opponents[j])
-                {
-                    case Opponent.AllC:
-                        pool[i] = Players.IPDPlayerFactory.AllC; break;
-                    case Opponent.AllD:
-                        pool[i] = Players.IPDPlayerFactory.AllD; break;
-                    case Opponent.TFT:
-                        pool[i] = Players.IPDPlayerFactory.TFT; break;
-                    case Opponent.STFT:
-                    default:
-                        pool[i] = Players.IPDPlayerFactory.STFT; break;
-                }
-            }
+                pool[i] = Players.IPDPlayerFactory.Create(opponents[j]);
             return pool;
         }
 
@@ -292,7 +310,13 @@ namespace SharpNeat.Domains.IPD
             public int InputCount { get { return _exp.InputCount; } }
             public int OutputCount { get { return _exp.OutputCount; } }
 
+            public int NoveltyArchiveSize { get { return _exp._noveltyArchiveSize; } }
+            public NoveltyEvaluationMode NoveltyEvaluationMode { get { return _exp._noveltyEvaluationMode; } }
+            public ObjectiveEvaluationMode ObjectiveEvaluationMode { get { return _exp._objectiveEvaluationMode; } }
+
             public IPDPlayer[] OpponentPool { get { return _exp._opponentPool; } }
+            public IPDGame[,] OpponentPoolGames { get; private set; }
+            public double[] OpponentScores { get; private set; }
             public int NumberOfGames { get { return _exp._numberOfGames; } }
 
             public int PopulationSize { get { return _exp._populationSize; } }
@@ -310,6 +334,26 @@ namespace SharpNeat.Domains.IPD
                 _genGet = () => { return ea.CurrentGeneration; };
                 _boxGet = () => { return decoder.Decode(ea.CurrentChampGenome); };
                 _current = _genGet();
+
+                var pool = _exp._opponentPool;
+                OpponentScores = new double[pool.Length];
+                OpponentPoolGames = new IPDGame[pool.Length, pool.Length];
+                for (int i = 0; i < pool.Length; i++)
+                {
+                    for (int j = i + 1; j < pool.Length; j++)
+                    {
+                        if (i != j) //currently not against each other but..
+                        {
+                            IPDGame g = new IPDGame(NumberOfGames, pool[i], pool[j]);
+                            g.Run();
+                            OpponentPoolGames[i, j] = g;
+                            OpponentPoolGames[j, i] = g;
+
+                            OpponentScores[i] += g.GetScore(pool[i]);
+                            OpponentScores[j] += g.GetScore(pool[j]);
+                        }
+                    }
+                }
             }
 
             public bool HasNewGenerationOccured()

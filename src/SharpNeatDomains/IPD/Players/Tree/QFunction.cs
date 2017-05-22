@@ -18,12 +18,15 @@ namespace SharpNeat.Domains.IPD.Players.Tree
         private bool _hasCond = false;
         private QFunctionConditional _cond;
         private QFunctionSequence _true;
-        private QFunctionSequence _false;    
+        private QFunctionSequence _false;
+
 
         public QFunction(QFunctionSequence q)
         {
             _true = q;
         }
+
+        public QFunction(params IPDGame.Choices[] choices) : this(new QFunctionSequence(choices)) { }
 
         public QFunction(QFunctionConditional cond, QFunctionSequence t, QFunctionSequence f) : this(t)
         {
@@ -40,6 +43,9 @@ namespace SharpNeat.Domains.IPD.Players.Tree
         }        
     }
 
+    /// <summary>
+    /// Left [leq] Right
+    /// </summary>
     struct QFunctionConditional
     {
         private (QFunction.Values, int) _left;

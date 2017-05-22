@@ -36,14 +36,14 @@ namespace SharpNeat.Domains.IPD.Players.Tree
         private IPDGame.Past[] _x;
 
         public PayoffConditionalNode(int leftNode, int rightNode, int k, params IPDGame.Past[] x) : base(leftNode, rightNode)
-        {            
-            _k = k;
+        {
+            _k = 0 - Math.Abs(k);
             _x = x;
         }
 
         public PayoffConditionalNode(int leftNode, int rightNode, int k, int a = 0, int b = 0, params IPDGame.Past[] x) : base(leftNode, rightNode, a, b)
         {
-            _k = k;
+            _k = 0 - Math.Abs(k);
             _x = x;
         }
 

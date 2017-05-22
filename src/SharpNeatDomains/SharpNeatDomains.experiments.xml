@@ -17,15 +17,29 @@
       </Description>
       <IPDGames>100</IPDGames>
       <RandomPlayerSeed>98465</RandomPlayerSeed>
-      <RandomPlayerCount>100</RandomPlayerCount>
-      <StaticOpponents>AllC,AllD,TFT,STFT</StaticOpponents>
+      <RandomPlayerCount>0</RandomPlayerCount>
+      <StaticOpponents>AllC,AllD,TFT,STFT,Grudger</StaticOpponents>
       <!--
           AllC,
+          AllR,
           AllD,
           TFT,
-          STFT
+          STFT,
+          Grudger
         -->
-      
+      <NoveltyArchiveSize>100</NoveltyArchiveSize>
+      <NoveltyEvaluationMode>Disable</NoveltyEvaluationMode>
+      <!--
+          Disable,
+          Immediate,
+          ArchiveFull,
+          SlowArchiveFull
+        -->
+      <ObjectiveEvaluationMode>Rank</ObjectiveEvaluationMode>
+      <!--
+          Fitness,
+          Rank
+        -->
       <PastInputReach>3</PastInputReach>
 
     </Config>

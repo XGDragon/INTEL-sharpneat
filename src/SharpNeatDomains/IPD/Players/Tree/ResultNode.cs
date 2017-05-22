@@ -18,6 +18,11 @@ namespace SharpNeat.Domains.IPD.Players.Tree
 
         private QFunction _q;
 
+        public AssignResultNode(params IPDGame.Choices[] choices)
+        {
+            _q = new QFunction(choices);
+        }
+
         public AssignResultNode(QFunction qfunction)
         {
             _q = qfunction;

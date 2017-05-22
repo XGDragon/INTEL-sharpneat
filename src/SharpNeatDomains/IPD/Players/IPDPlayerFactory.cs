@@ -10,32 +10,59 @@ namespace SharpNeat.Domains.IPD.Players
 {
     class IPDPlayerFactory
     {
-        public static IPDPlayerGenerated TFT => _createXTFT("TFT", IPDGame.Choices.C);
-        public static IPDPlayerGenerated STFT => _createXTFT("STFT", IPDGame.Choices.D);
-        public static IPDPlayerGenerated AllC => _allX("AllC", IPDGame.Choices.C);
-        public static IPDPlayerGenerated AllR => _allX("AllR", IPDGame.Choices.R);
-        public static IPDPlayerGenerated AllD => _allX("AllD", IPDGame.Choices.D);
+        public static IPDPlayerGenerated Create(IPDExperiment.Opponent op)
+        {
+            switch (op)
+            {
+                case IPDExperiment.Opponent.AllR:
+                default:
+                    return CreateAllX("AllR", IPDGame.Choices.R);
+                case IPDExperiment.Opponent.AllC:
+                    return CreateAllX("AllC", IPDGame.Choices.C);
+                case IPDExperiment.Opponent.AllD:
+                    return CreateAllX("AllD", IPDGame.Choices.D);
+                case IPDExperiment.Opponent.TFT:
+                    return CreateXTFT("TFT", IPDGame.Choices.C);
+                case IPDExperiment.Opponent.STFT:
+                    return CreateXTFT("STFT", IPDGame.Choices.D);
+                case IPDExperiment.Opponent.Grudger:
+                    return CreateGrudger();
+            }
+        }
 
-        private static IPDPlayerGenerated _createXTFT(string name, IPDGame.Choices startingChoice)
+        private static IPDPlayerGenerated CreateXTFT(string name, IPDGame.Choices startingChoice)
         {
             DecisionTree tree = new DecisionTree(new Dictionary<int, Node>()
             {
                 { 0, new PayoffConditionalNode(1, 2, 1, IPDGame.Past.P, IPDGame.Past.S) },
-                { 1, new AssignResultNode(new QFunction(new QFunctionSequence(IPDGame.Choices.D)))},
-                { 2, new AssignResultNode(new QFunction(new QFunctionSequence(IPDGame.Choices.C)))}
+                { 1, new AssignResultNode(new QFunction(IPDGame.Choices.D))},
+                { 2, new AssignResultNode(new QFunction(IPDGame.Choices.C))}
             });
 
             return new IPDPlayerGenerated(name, tree, startingChoice);
         }
 
-        private static IPDPlayerGenerated _allX(string name, IPDGame.Choices X)
+        private static IPDPlayerGenerated CreateAllX(string name, IPDGame.Choices X)
         {
             DecisionTree tree = new DecisionTree(new Dictionary<int, Node>()
             {
-                { 0, new AssignResultNode(new QFunction(new QFunctionSequence(X)))},
+                { 0, new AssignResultNode(new QFunction(X))},
             }, QFunction.Default);
 
             return new IPDPlayerGenerated(name, tree, X);
+        }
+
+        private static IPDPlayerGenerated CreateGrudger()
+        {
+            DecisionTree tree = new DecisionTree(new Dictionary<int, Node>()
+            {
+                { 0, new ValueConditionalNode(1, 2, new QFunctionConditional(QFunction.Values.Alpha, 0)) },
+                { 1, new PayoffConditionalNode(2, 3, 1, 1, 0, IPDGame.Past.S) },
+                { 2, new AssignResultNode(IPDGame.Choices.D)},
+                { 3, new AssignResultNode(IPDGame.Choices.C)}
+            });
+
+            return new IPDPlayerGenerated("Grudger", tree, IPDGame.Choices.C);
         }
 
         private Random _r;
@@ -86,7 +113,7 @@ namespace SharpNeat.Domains.IPD.Players
             for (int i = condNodes.Length; i < _resultId; i++)
                 treeDict.Add(i, CreateResultNode());
 
-            string name = _r.GenerateRandomFirstAndLastName() + " " + _r.GenerateRandomPlaceName();
+            string name = _r.GenerateRandomFirstAndLastName();
             IPDGame.Choices[] c = new IPDGame.Choices[RandomAmount()];
             for (int i = 0; i < c.Length; i++)
                 c[i] = RandomChoice();

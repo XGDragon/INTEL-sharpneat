@@ -12,92 +12,48 @@ using System.Threading;
 using System.Linq;
 using CsvHelper;
 using System.IO;
+using System.Text;
 
 namespace SharpNeat.Domains.IPD
 {
     partial class IPDGameTable : AbstractDomainView
     {
-        IGenomeDecoder<NeatGenome, IBlackBox> _genomeDecoder;
+        private IGenomeDecoder<NeatGenome, IBlackBox> _genomeDecoder;
+        private IPDExperiment.Info _info;
+        
+        private IPDPlayer[] _players;
+        private IPDGame[,] _games;
+        
+        private DataGridView _table;
+        private DataGridViewColumn _cumulative;
+        private DataGridViewColumn _rankings;
 
-        int _numberOfGames;
-        IPDPlayer[] _players;
-        IPDGame[,] _games;
-        bool _isValid = false;
-        Button _save;
-        Object _genomeLock = new Object();
-
-        public IPDGameTable(IGenomeDecoder<NeatGenome, IBlackBox> genomeDecoder, int numberOfGames, params IPDPlayer[] pool)
+        public IPDGameTable(IGenomeDecoder<NeatGenome, IBlackBox> genomeDecoder, IPDExperiment.Info info)
         {
             InitializeComponent();
-            CreateSaveButton();
-            _save.MouseClick += _save_MouseClick;
 
-            _numberOfGames = numberOfGames;
             _genomeDecoder = genomeDecoder;
+            _info = info;
 
-            _games = new IPDGame[pool.Length + 1, pool.Length + 1];
-            _players = new IPDPlayer[pool.Length + 1];
-
-            for (int i = 0; i < pool.Length; i++)
+            try
             {
-                _players[i + 1] = pool[i];
-                for (int j = i + 1; j < pool.Length; j++)
-                {
-                    if (i != j) //currently not against each other but..
-                    {
-                        IPDGame g = new IPDGame(_numberOfGames, pool[i], pool[j]);
-                        g.Run();
-                        _games[i + 1, j + 1] = g;
-                        _games[j + 1, i + 1] = g;
-                    }
-                }
+                _players = new IPDPlayer[info.OpponentPool.Length + 1];
+                _players[0] = new Players.IPDPlayerPhenome(null);
+                Array.Copy(info.OpponentPool, 0, _players, 1, info.OpponentPool.Length);
+                _games = new IPDGame[info.OpponentPool.Length + 1, info.OpponentPool.Length + 1];
+                for (int i = 1; i < _players.Length; i++)
+                    for (int j = 1; j < _players.Length; j++)
+                        _games[i, j] = info.OpponentPoolGames[i - 1, j - 1];
+
+                CreateTable();
+            }
+            catch (ArgumentNullException)
+            {
+                return;
             }
         }
 
-        private void _save_MouseClick(object sender, MouseEventArgs e)
-        {
-            if (e.Button == MouseButtons.Left && _isValid)
-            {
-                SaveFileDialog save = new SaveFileDialog();
-                save.FileName = "GameTables.csv";
-                save.Filter = "CSV File | *.csv";
-                if (save.ShowDialog() == DialogResult.OK)
-                {
-                    StreamWriter writer = new StreamWriter(save.OpenFile());
-                    CsvWriter csv = new CsvWriter(writer);
-
-                    //Header
-                    csv.WriteField(string.Empty);
-                    for (int i = 0; i < _players.Length; i++)
-                        csv.WriteField(_players[i].Name);
-                    csv.WriteField("Cumulative Score");
-                    csv.NextRecord();
-
-                    //Rows
-                    for (int i = 0; i < _players.Length; i++)
-                    {
-                        double total = 0;
-                        csv.WriteField(_players[i].Name);
-                        for (int j = 0; j < _players.Length; j++)
-                        {
-                            if (i == j)
-                                csv.WriteField(string.Empty);
-                            else
-                            {
-                                double s = _games[i, j].GetScore(_players[i]);
-                                total += s;
-                                csv.WriteField(s.ToString());
-                            }
-                        }
-                        csv.WriteField(total.ToString());
-                        csv.NextRecord();
-                    }
-
-                    writer.Dispose();
-                    writer.Close();
-                }               
-            }
-        }
+        public override Size WindowSize => new Size(535, 555);
 
         public override void RefreshView(object genome)
         {
@@ -108,27 +64,130 @@ namespace SharpNeat.Domains.IPD
             for (int i = 1; i < _players.Length; i++)
             {
                 phenome.ResetState();
-                var g = new IPDGame(_numberOfGames, _players[0], _players[i]);
+                var g = new IPDGame(_info.NumberOfGames, _players[0], _players[i]);
                 g.Run();
                 _games[0, i] = g;
                 _games[i, 0] = g;
             }
 
-            _isValid = true;
+            UpdateTable();
         }
-
-        private void CreateSaveButton()
+        
+        private void CreateTable()
         {
             SuspendLayout();
-            //Size = new Size(70, 70);
 
-            _save = new Button();
-            _save.Location = new Point(10, 10);
-            _save.Size = new Size(100, 30);
-            _save.Text = "Save as CSV";
+            _table = new DataGridView();
+            _table.Location = new Point(10, 10);
+            _table.Size = new Size(500, 500);
+            _table.AllowUserToAddRows = false;
+            _table.RowHeadersWidth = 80;
+            _table.ContextMenuStrip = new ContextMenuStrip();
+            _table.ContextMenuStrip.Size = new Size(100, 30);
+            _table.ContextMenuStrip.Items.Add("Save as CSV", null, 
+                (sender, args) => 
+                {
+                    SaveTable();
+                });
 
-            Controls.Add(_save);
+            //Create columns and rows
+            DataGridViewColumn[] cols = new DataGridViewColumn[_players.Length];
+            for (int i = 0; i < _players.Length; i++)
+            {
+                cols[i] = new DataGridViewTextBoxColumn();
+                cols[i].HeaderText = _players[i].Name;
+                cols[i].ValueType = typeof(double);
+                cols[i].Width = 40;
+            }
+            _table.Columns.AddRange(cols);
+            _table.Rows.Add(_players.Length);
+            for (int i = 0; i < _players.Length; i++)
+                _table.Rows[i].HeaderCell.Value = _players[i].Name;
+
+            Controls.Add(_table);
             ResumeLayout(false);
+
+            //Cumulative and Ranking columns
+            _cumulative = new DataGridViewTextBoxColumn();
+            _cumulative.HeaderText = "Cumulative Score";
+            _cumulative.AutoSizeMode = DataGridViewAutoSizeColumnMode.ColumnHeader;
+            _table.Columns.Add(_cumulative);
+
+            _rankings = new DataGridViewTextBoxColumn();
+            _rankings.HeaderText = "Ranking";
+            _rankings.AutoSizeMode = DataGridViewAutoSizeColumnMode.ColumnHeader;
+            _table.Columns.Add(_rankings);
+        }
+
+        private void UpdateTable()
+        {
+            //Fill in table
+            double[] totals = new double[_players.Length];
+            for (int i = 0; i < _players.Length; i++)
+                for (int j = i + 1; j < _players.Length; j++)
+                    if (i != j)
+                    {
+                        DataGridViewCell iCell = _table.Rows[i].Cells[j];   //top diagonal
+                        DataGridViewCell jCell = _table.Rows[j].Cells[i];   //bottom diagonal
+                        double iScore = _games[i, j].GetScore(_players[i]);
+                        double jScore = _games[i, j].GetScore(_players[j]);
+
+                        iCell.Value = iScore;
+                        iCell.ToolTipText = jScore.ToString();
+
+                        jCell.Value = jScore;
+                        jCell.ToolTipText = iScore.ToString();
+
+                        totals[i] += iScore;
+                        totals[j] += jScore;
+                    }
+
+            //Calculate cumulative column
+            for (int i = 0; i < _players.Length; i++)
+            {
+                _table.Rows[i].Cells[_cumulative.DisplayIndex].Value = totals[i];
+                _table.Rows[i].Cells[_cumulative.DisplayIndex].ToolTipText = _players[i].Name + "'s total score";
+            }
+            
+            //Calculate rankings column 
+            var ranks = totals.Rank();
+            for (int i = 0; i < _players.Length; i++)
+            {
+                _table.Rows[i].Cells[_rankings.DisplayIndex].Value = ranks[i];
+                _table.Rows[i].Cells[_rankings.DisplayIndex].ToolTipText = (ranks[i] / (double)ranks.Length).ToString("F3");
+            }
+        }        
+
+        private void SaveTable()
+        {
+            SaveFileDialog sfd = new SaveFileDialog();
+            sfd.Filter = "CSV (*.csv)|*.csv";
+            sfd.FileName = "Output.csv";
+            if (sfd.ShowDialog() == DialogResult.OK)
+            {
+                string filename = sfd.FileName.Substring(0, sfd.FileName.Length - 4);
+                int c = 1;
+                while (File.Exists(sfd.FileName))
+                    sfd.FileName = filename + " (" + c++ + ").csv";
+
+                int columnCount = _table.ColumnCount;
+                string columnNames = ",";
+                string[] output = new string[_table.RowCount + 1];
+                for (int i = 0; i < columnCount; i++)
+                    columnNames += _table.Columns[i].HeaderText.ToString() + ",";
+
+                output[0] += columnNames;
+                for (int i = 1; (i - 1) < _table.RowCount; i++)
+                {
+                    output[i] = _table.Rows[i - 1].HeaderCell.Value.ToString() + ",";
+                    for (int j = 0; j < columnCount; j++)
+                        output[i] += (_table.Rows[i - 1].Cells[j].Value != null)
+                            ? _table.Rows[i - 1].Cells[j].Value.ToString() + ","
+                            : ",";
+                }
+
+                System.IO.File.WriteAllLines(sfd.FileName, output, System.Text.Encoding.UTF8);
+            }
         }
     }
 }
