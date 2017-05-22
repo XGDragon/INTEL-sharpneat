@@ -19,6 +19,8 @@ namespace SharpNeat.Domains.IPD
 
         public abstract IPDGame.Choices Choice(IPDGame game);
 
+        public abstract void Reset();
+
         public delegate IPDGame.Choices[] QFunction(int alpha, int beta);
     }
 }

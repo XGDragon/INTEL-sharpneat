@@ -10,13 +10,17 @@ namespace SharpNeat.Domains.IPD
     {
         public enum Choices { C, D, R };
         public enum Past { None = -1, T = 5, R = 3, P = 1, S = 0 };
-        
-        public int T { get; private set; }
-
-        public int Length { get; private set; }
 
         private static Random _r = new Random();
+        public static bool AllowRandomChoice { get; set; }
+        public static Choices RandomChoice() { return (AllowRandomChoice) ? ((_r.NextDouble() < 0.5) ? Choices.C : Choices.D) : Choices.C; }
 
+        public int T { get; private set; }
+        public int Length { get; private set; }
+
+        public IPDPlayer A { get { return _a.Player; } }
+        public IPDPlayer B { get { return _b.Player; } }
+                
         private PlayerCard _a;
         private PlayerCard _b;
 
@@ -29,10 +33,13 @@ namespace SharpNeat.Domains.IPD
 
         public void Run()
         {
+            A.Reset();
+            B.Reset();
+
             while (T < Length)
             {
-                Choices a = _a.Player.Choice(this);
-                Choices b = _b.Player.Choice(this);
+                Choices a = A.Choice(this);
+                Choices b = B.Choice(this);
                 a = (a == Choices.R) ? RandomChoice() : a;
                 b = (b == Choices.R) ? RandomChoice() : b;
 
@@ -42,18 +49,36 @@ namespace SharpNeat.Domains.IPD
             }
         }
 
-        private Choices RandomChoice()
+        public override string ToString()
         {
-            return (_r.NextDouble() < 0.5) ? Choices.C : Choices.D;
+            return A.Name + " v. " + B.Name;
         }
 
         public Past GetPast(IPDPlayer ab, int time)
         {
-            if (time < 0 || (ab != _a.Player && ab != _b.Player))
+            if (time < 0 || (ab != A && ab != B))
                 return Past.None;
 
             int t = (time > T) ? T : time;
-            return (ab == _a.Player) ? _a[t] : _b[t];
+            return (ab == A) ? _a[t] : _b[t];
+        }
+
+        public Choices GetChoice(IPDPlayer ab, int time)
+        {
+            if (time < 0 || (ab != A && ab != B))
+                return Choices.R;
+
+            switch (GetPast(ab, time))
+            {
+                case Past.R:
+                case Past.S:
+                    return Choices.C;
+                case Past.P:
+                case Past.T:
+                    return Choices.D;
+                default:
+                    return Choices.R;
+            }
         }
 
         public double GetScore(IPDPlayer ab)

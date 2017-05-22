@@ -9,6 +9,8 @@ namespace SharpNeat.Domains.IPD.Players.Tree
         
         private Dictionary<int, Node> _tree;
         private QFunction _q;
+        private IPDPlayer _player;
+        private Iterator _iterator;
 
         public DecisionTree(Dictionary<int, Node> tree)
         {
@@ -23,10 +25,8 @@ namespace SharpNeat.Domains.IPD.Players.Tree
             _q = q;
         }
 
-        public IPDGame.Choices[] Run(IPDPlayer player, IPDGame game)
+        public IPDGame.Choices[] Run(IPDGame game)
         {
-            Iterator iter = new Iterator(player);
-
             int node = 0;
             IPDGame.Choices[] result = null;
             while (_tree.ContainsKey(node))
@@ -34,16 +34,16 @@ namespace SharpNeat.Domains.IPD.Players.Tree
                 //Encountered a Assign Result node
                 if (_tree[node].HasResult)
                 {
-                    result = _tree[node].Result.Evaluate(iter.Alpha, iter.Beta);
+                    result = _tree[node].Result.Evaluate(_iterator.Alpha, _iterator.Beta);
                     break;
                 }
 
-                node = _tree[node].Evaluate(ref iter, game);    //Alpha, Beta are not changed if INVOKE_Q
+                node = _tree[node].Evaluate(ref _iterator, game);    //Alpha, Beta are not changed if INVOKE_Q
 
                 //k - K < 0
                 if (node == INVOKE_Q)
                 {
-                    result = _q.Evaluate(iter.Alpha, iter.Beta);
+                    result = _q.Evaluate(_iterator.Alpha, _iterator.Beta);
                     break;
                 }
             }
@@ -53,6 +53,12 @@ namespace SharpNeat.Domains.IPD.Players.Tree
             else if (result.Length == 0)
                 throw new System.Exception("Result returned an empty value");
             else return result;
+        }
+
+        public void Reset(IPDPlayer owner)
+        {
+            _player = owner;
+            _iterator = new Iterator(_player);
         }
 
         private bool IsValidTree(Dictionary<int, Node> tree)

@@ -52,6 +52,11 @@ namespace SharpNeat.Domains.IPD.Players
             return (_phenome.OutputSignalArray[0] > _phenome.OutputSignalArray[1]) ? IPDGame.Choices.C : IPDGame.Choices.D;
         }
 
+        public override void Reset()
+        {
+            _phenome.ResetState();
+        }
+
         private double PastToInput(IPDGame.Past past)
         {
             switch (past)

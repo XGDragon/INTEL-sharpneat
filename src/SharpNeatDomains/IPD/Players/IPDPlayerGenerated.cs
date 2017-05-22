@@ -26,6 +26,12 @@ namespace SharpNeat.Domains.IPD.Players
 
             _initQ = initQ;
             _tree = tree;
+            Reset();
+        }
+
+        public override void Reset()
+        {
+            _tree.Reset(this);
         }
 
         public override IPDGame.Choices Choice(IPDGame game)
@@ -35,7 +41,7 @@ namespace SharpNeat.Domains.IPD.Players
                 if (game.T == 0)
                     FillQueue(_initQ);
                 if (_q.Count == 0)
-                    FillQueue(_tree.Run(this, game));
+                    FillQueue(_tree.Run(game));
                 if (_q.Count == 0)
                     throw new Exception("Q is still empty?");
                 return _q.Dequeue();

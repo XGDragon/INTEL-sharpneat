@@ -126,9 +126,8 @@ namespace SharpNeat.Domains.IPD.Players
             double n = _r.NextDouble();
             if (n < 0.1)
                 return IPDGame.Choices.R;
-            else if (n < 0.55)
-                return IPDGame.Choices.C;
-            else return IPDGame.Choices.D;
+            else
+                return IPDGame.RandomChoice();
         }
 
         /// <summary>

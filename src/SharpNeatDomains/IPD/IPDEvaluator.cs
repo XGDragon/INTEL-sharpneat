@@ -71,7 +71,6 @@ namespace SharpNeat.Domains.IPD
                 double[] scores = new double[_info.OpponentPool.Length + 1];
                 for (int i = 0; i < phenomeIndex; i++)
                 {
-                    phenome.ResetState();
                     IPDGame g = new IPDGame(_info.NumberOfGames, p, _info.OpponentPool[i]);
                     g.Run();
 
