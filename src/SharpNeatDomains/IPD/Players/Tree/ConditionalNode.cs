@@ -37,17 +37,17 @@ namespace SharpNeat.Domains.IPD.Players.Tree
 
         public PayoffConditionalNode(int leftNode, int rightNode, int k, params IPDGame.Past[] x) : base(leftNode, rightNode)
         {
-            _k = 0 - Math.Abs(k);
+            _k = k;
             _x = x;
         }
 
         public PayoffConditionalNode(int leftNode, int rightNode, int k, int a = 0, int b = 0, params IPDGame.Past[] x) : base(leftNode, rightNode, a, b)
         {
-            _k = 0 - Math.Abs(k);
+            _k = k;
             _x = x;
         }
 
-        public override int Evaluate(DecisionTree.Iterator iterator, IPDGame game)
+        public override int Evaluate(ref DecisionTree.Iterator iterator, IPDGame game)
         {
             int t = game.T - _k - iterator.K;
 
@@ -81,7 +81,7 @@ namespace SharpNeat.Domains.IPD.Players.Tree
             _cond = cond;
         }
 
-        public override int Evaluate(DecisionTree.Iterator iterator, IPDGame game)
+        public override int Evaluate(ref DecisionTree.Iterator iterator, IPDGame game)
         {
             if (_cond.Evaluate(iterator.Alpha, iterator.Beta))
             {

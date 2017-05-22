@@ -11,7 +11,7 @@ namespace SharpNeat.Domains.IPD.Players.Tree
         public abstract bool HasResult { get; }
         public abstract QFunction Result { get; }
 
-        public virtual int Evaluate(DecisionTree.Iterator iterator, IPDGame game)
+        public virtual int Evaluate(ref DecisionTree.Iterator iterator, IPDGame game)
         {
             throw new Exception("This node has not implemented an Evaluate function.");
         }

@@ -35,7 +35,7 @@
           ArchiveFull,
           SlowArchiveFull
         -->
-      <ObjectiveEvaluationMode>Rank</ObjectiveEvaluationMode>
+      <ObjectiveEvaluationMode>Fitness</ObjectiveEvaluationMode>
       <!--
           Fitness,
           Rank

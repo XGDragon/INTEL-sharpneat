@@ -31,14 +31,16 @@ namespace SharpNeat.Domains.IPD.Players.Tree
             IPDGame.Choices[] result = null;
             while (_tree.ContainsKey(node))
             {
+                //Encountered a Assign Result node
                 if (_tree[node].HasResult)
                 {
                     result = _tree[node].Result.Evaluate(iter.Alpha, iter.Beta);
                     break;
                 }
 
-                node = _tree[node].Evaluate(iter, game);    //Alpha, Beta are not changed if INVOKE_Q
+                node = _tree[node].Evaluate(ref iter, game);    //Alpha, Beta are not changed if INVOKE_Q
 
+                //k - K < 0
                 if (node == INVOKE_Q)
                 {
                     result = _q.Evaluate(iter.Alpha, iter.Beta);

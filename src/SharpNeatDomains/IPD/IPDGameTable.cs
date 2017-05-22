@@ -158,6 +158,8 @@ namespace SharpNeat.Domains.IPD
             }
         }        
 
+        //show context menu to display the full history of a certain cell/game!
+
         private void SaveTable()
         {
             SaveFileDialog sfd = new SaveFileDialog();
@@ -186,7 +188,7 @@ namespace SharpNeat.Domains.IPD
                             : ",";
                 }
 
-                System.IO.File.WriteAllLines(sfd.FileName, output, System.Text.Encoding.UTF8);
+                File.WriteAllLines(sfd.FileName, output, Encoding.UTF8);
             }
         }
     }

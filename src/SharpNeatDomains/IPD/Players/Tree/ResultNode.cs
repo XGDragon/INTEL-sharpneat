@@ -40,7 +40,7 @@ namespace SharpNeat.Domains.IPD.Players.Tree
             _jumpTo = jumpTo;
         }
 
-        public override int Evaluate(DecisionTree.Iterator iterator, IPDGame game)
+        public override int Evaluate(ref DecisionTree.Iterator iterator, IPDGame game)
         {
             iterator.K++;
             return _jumpTo;
