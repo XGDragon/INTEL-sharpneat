@@ -162,6 +162,7 @@ namespace SharpNeat.Domains.IPD
             _noveltyEvaluationMode = GetValueAsEnum<NoveltyEvaluationMode>("NoveltyEvaluationMode");
             _objectiveEvaluationMode = GetValueAsEnum<ObjectiveEvaluationMode>("ObjectiveEvaluationMode");
 
+            IPDGame.AllowRandomChoice = XmlUtils.GetValueAsBool(xmlConfig, "AllowRandomChoice");
             _pastInputReach = XmlUtils.GetValueAsInt(xmlConfig, "PastInputReach");
 
             _description = XmlUtils.TryGetValueAsString(xmlConfig, "Description");
