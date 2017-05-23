@@ -94,6 +94,29 @@ namespace SharpNeatGUI
             _xwSettings.Indent = true;
 
             _plotColorArr = GenerateNiceColors(10);
+
+            KeyPreview = true;
+            KeyPress += MainForm_KeyPress;
+        }
+
+        private void MainForm_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            switch (e.KeyChar)
+            {
+                case 'p':
+                    bestGenomeToolStripMenuItem_Click(null, EventArgs.Empty); break;
+                case 'g':
+                    problemDomainToolStripMenuItem_Click(null, EventArgs.Empty); break;
+                case '1':
+                    btnCreateRandomPop_Click(null, EventArgs.Empty); break;
+                case '2':
+                    btnSearchStart_Click(null, EventArgs.Empty); break;
+                case '3':
+                    btnSearchReset_Click(null, EventArgs.Empty); break;
+            }
+
+            //            btnLoadDomainDefaults.Enabled = true;
+            //btnCreateRandomPop.Enabled = true;
         }
 
         /// <summary>
@@ -749,6 +772,8 @@ namespace SharpNeatGUI
         #endregion
 
         #region GUI Wiring [Menu Bar - Views]
+
+
 
         private void bestGenomeToolStripMenuItem_Click(object sender, EventArgs e)
         {

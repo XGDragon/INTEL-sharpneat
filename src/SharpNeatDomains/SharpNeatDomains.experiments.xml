@@ -16,35 +16,34 @@
         TBD.
       </Description>
       <IPDGames>100</IPDGames>
-      <AllowRandomChoice>true</AllowRandomChoice>
       <RandomPlayerSeed>9865</RandomPlayerSeed>
       <RandomPlayerCount>0</RandomPlayerCount>
-      <StaticOpponents>AllR</StaticOpponents>
+      <RandomRobustCheck>100</RandomRobustCheck>
+      <StaticOpponents>AllD,AllR,AllC,Adaptive,TFT,STFT,Grudger,Pavlov</StaticOpponents>
       <!--
           AllC,
           AllR,
           AllD,
           TFT,
           STFT,
-          Grudger
+          Grudger,
+          Pavlov,
+          Adaptive,
+          ZD
         -->
-      <NoveltyEvaluationMode>Immediate</NoveltyEvaluationMode>
+      <EvaluationMode>Novelty</EvaluationMode>
       <!--
-          Disable,
-          Immediate
+          Score,  (objective)
+          Rank,   (objective)
+          Novelty (novelty)
         -->
-      <NoveltyMetric>Past</NoveltyMetric>
+      <NoveltyMetric>Score</NoveltyMetric>
             <!--
           Score,
           Past,
           Choice
         -->
       <NoveltyK>3</NoveltyK>
-      <ObjectiveEvaluationMode>Fitness</ObjectiveEvaluationMode>
-      <!--
-          Fitness,
-          Rank
-        -->
       <PastInputReach>5</PastInputReach>
 
     </Config>

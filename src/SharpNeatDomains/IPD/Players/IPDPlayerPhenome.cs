@@ -9,14 +9,7 @@ namespace SharpNeat.Domains.IPD.Players
 {
     class IPDPlayerPhenome : IPDPlayer
     {
-        //list of opponents. per opponent, play n games (filling up inputs with results). output must be the counter strategy.
-        //suggestion for output: output 1 - 4 is resp. TRPS results from last round. depending on last round, use mixed strategy of output x
-        //each strat has a counterstrategy vector size 4. AllD counterstrategy is { 0, 0, 0, 0 }. AllC and TFT counterstrategy is { 1, 1, 1, 1 }. random is { .5, .5, .5, .5 }
-        //each game fitness is calculated by comparing current output vector with counterstrategy vector. smaller difference > higher fitness, possibly with greater weight for earlier games.
-        //SEE PAPER FOR IDEAS ON FITNESS FUNCTIONS ETC, PAGE 112
-
         private const IPDGame.Choices FIRST_CHOICE = IPDGame.Choices.C;
-        //private readonly IPDGame.Past[] _pastToI = new IPDGame.Past[4] { IPDGame.Past.T, IPDGame.Past.R, IPDGame.Past.P, IPDGame.Past.S };
 
         public override string Name => "Phenome";
 
@@ -55,39 +48,6 @@ namespace SharpNeat.Domains.IPD.Players
         public override void Reset()
         {
             _phenome.ResetState();
-        }
-
-        private double PastToInput(IPDGame.Past past)
-        {
-            switch (past)
-            {
-                case IPDGame.Past.T:
-                    return 1.0;
-                case IPDGame.Past.R:
-                    return 2.0;
-                case IPDGame.Past.P:
-                    return 3.0;
-                case IPDGame.Past.S:
-                    return 4.0;
-                default:
-                    return 0.0;
-            }
-        }
-
-        private int PastToOutput(IPDGame.Past past)
-        {
-            switch (past)
-            {
-                case IPDGame.Past.T:
-                    return 0;
-                case IPDGame.Past.R:
-                    return 1;
-                case IPDGame.Past.P:
-                    return 2;
-                case IPDGame.Past.S:
-                default:
-                    return 3;
-            }
         }
     }
 }

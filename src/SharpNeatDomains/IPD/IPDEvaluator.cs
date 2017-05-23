@@ -13,8 +13,11 @@ namespace SharpNeat.Domains.IPD
 {
     class IPDEvaluator : IPhenomeEvaluator<IBlackBox>
     {
+        private double MAX_FITNESS = 100000;
+
         public ulong EvaluationCount { get; private set; }
 
+        private Object _stopLock = new Object();
         private bool _stopConditionSatisfied = false;
         public bool StopConditionSatisfied { get { return _stopConditionSatisfied; } }
         
@@ -35,34 +38,23 @@ namespace SharpNeat.Domains.IPD
         /// Evaluate the provided IBlackBox against the IPD problem domain and return its fitness score.
         /// </summary>
         public FitnessInfo Evaluate(IBlackBox phenome)
-        {            
+        {
             EvaluationCount++;
-
-            //switch (_info.NoveltyEvaluationMode)
-            //{
-            //    case IPDExperiment.NoveltyEvaluationMode.Disable:
-            //        _noveltyMode = false; break;
-            //    case IPDExperiment.NoveltyEvaluationMode.Immediate:
-            //        _noveltyMode = _info.CurrentGeneration > 0; break;
-            //    case IPDExperiment.NoveltyEvaluationMode.ArchiveFull:
-            //        _noveltyMode = (_archive.Count == _info.NoveltyArchiveSize && _info.CurrentGeneration > _info.NoveltyArchiveSize); break;
-            //    case IPDExperiment.NoveltyEvaluationMode.SlowArchiveFull:
-            //        _noveltyMode = (_archive.Count == _info.NoveltyArchiveSize && _info.CurrentGeneration > _info.NoveltyArchiveSize * 2); break;
-            //}
-
-            //_stopConditionSatisfied = (pi.Rank == 1.0d);
 
             var pi = EvaluateBehavior(phenome);
             double objectiveFitness = pi.Fitness;
             double noveltyFitness = EvaluateNovelty(pi);
 
-            if (pi.Rank == 1.0d)
+            if (pi.Rank == 1.0d && _info.CurrentGeneration > 0)
             {
-                _stopConditionSatisfied = true;
-                return new FitnessInfo(double.MaxValue, pi.Score);
+                lock (_stopLock)
+                {
+                    _stopConditionSatisfied = true;
+                    return new FitnessInfo(_info.BestFitness * _info.BestFitness, pi.Score);
+                }
             }
 
-            return (_info.NoveltyEvaluationMode == IPDExperiment.NoveltyEvaluationMode.Immediate)
+            return (_info.EvaluationMode == IPDExperiment.EvaluationMode.Novelty)
                 ? new FitnessInfo(noveltyFitness, objectiveFitness)
                 : new FitnessInfo(objectiveFitness, noveltyFitness);
         }
@@ -78,9 +70,22 @@ namespace SharpNeat.Domains.IPD
             {
                 games[i] = new IPDGame(_info.NumberOfGames, p, _info.OpponentPool[i]);
                 games[i].Run();
+                double[] s = new double[2] { games[i].GetScore(_info.OpponentPool[i]), games[i].GetScore(p) };
 
-                scores[i] += games[i].GetScore(_info.OpponentPool[i]) + _info.OpponentScores[i];
-                scores[phenomeIndex] += games[i].GetScore(p);
+                if (games[i].HasRandom)
+                {
+                    for (int r = 1; r < _info.RandomRobustCheck; r++)
+                    {
+                        games[i].Run();
+                        s[0] += games[i].GetScore(_info.OpponentPool[i]);
+                        s[1] += games[i].GetScore(p);
+                    }
+                    s[0] /= _info.RandomRobustCheck;
+                    s[1] /= _info.RandomRobustCheck;
+                }
+
+                scores[i] += s[0] + _info.OpponentScores[i];
+                scores[phenomeIndex] += s[1];
             }
 
             double score = scores[phenomeIndex];
@@ -88,6 +93,7 @@ namespace SharpNeat.Domains.IPD
             double rank = ranks[phenomeIndex] / (double)ranks.Length;
             if (rank == 1.0d)
             {
+                //Ties are not allowed
                 for (int i = 0; i < scores.Length; i++)
                     if (scores[i] == scores[phenomeIndex] && i != phenomeIndex)
                         rank -= 0.01d;
@@ -98,7 +104,7 @@ namespace SharpNeat.Domains.IPD
 
         private double EvaluateNovelty(PhenomeInfo info)
         {
-            if (_info.NoveltyEvaluationMode == IPDExperiment.NoveltyEvaluationMode.Disable)
+            if (_info.EvaluationMode != IPDExperiment.EvaluationMode.Novelty)
                 return 0;
 
             int ii = 0;
@@ -154,7 +160,7 @@ namespace SharpNeat.Domains.IPD
 
         public class PhenomeInfo
         {
-            private static IPDExperiment.ObjectiveEvaluationMode _evaluationMode { get; set; }
+            private static IPDExperiment.EvaluationMode _evaluationMode { get; set; }
             private static IPDExperiment.NoveltyMetric _metric { get; set; }
 
             public static void Initialize(IPDExperiment.Info info)
@@ -176,7 +182,7 @@ namespace SharpNeat.Domains.IPD
             public double Rank { get; private set; }
             public double Score { get; private set; }
             public IPDGame[] Games { get; private set; }
-            public double Fitness { get { return (_evaluationMode == IPDExperiment.ObjectiveEvaluationMode.Rank) ? Rank : Score; } }
+            public double Fitness { get { return (_evaluationMode == IPDExperiment.EvaluationMode.Rank) ? Rank : Score; } }
 
             private double[] _pc;
 

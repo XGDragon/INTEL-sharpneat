@@ -11,9 +11,9 @@ namespace SharpNeat.Domains.IPD
         public enum Choices { C, D, R };
         public enum Past { None = -1, T = 5, R = 3, P = 1, S = 0 };
 
-        private static Random _r = IPDExperiment.R;
+        private static Random _r = new Random();
 
-        public static Choices RandomChoice() { return (_r.NextDouble() < 0.5) ? Choices.C : Choices.D; }
+        public static Choices RandomChoice(double chanceForC = 0.5) { return (_r.NextDouble() < chanceForC) ? Choices.C : Choices.D; }
 
         public static int PastToIndex(Past p)
         {
@@ -33,6 +33,7 @@ namespace SharpNeat.Domains.IPD
 
         public int T { get; private set; }
         public int Length { get; private set; }
+        public bool HasRandom { get; private set; }
 
         public IPDPlayer A { get { return _a.Player; } }
         public IPDPlayer B { get { return _b.Player; } }
@@ -45,6 +46,7 @@ namespace SharpNeat.Domains.IPD
             _a = new PlayerCard(a, numberOfGames);
             _b = new PlayerCard(b, numberOfGames);
             Length = numberOfGames;
+            HasRandom = false;
         }
 
         public void Run()
@@ -52,15 +54,25 @@ namespace SharpNeat.Domains.IPD
             A.Reset();
             B.Reset();
 
+            _a = new PlayerCard(_a);
+            _b = new PlayerCard(_b);
+            T = 0;
+
             while (T < Length)
             {
                 Choices a = A.Choice(this);
                 Choices b = B.Choice(this);
 
                 if (a == Choices.R)
+                {
+                    HasRandom = true;
                     a = RandomChoice();
+                }
                 if (b == Choices.R)
+                {
+                    HasRandom = true;
                     b = RandomChoice();
+                }
 
                 _a.AddPast(a, b);
                 _b.AddPast(b, a);
@@ -138,6 +150,16 @@ namespace SharpNeat.Domains.IPD
             {
                 Player = player;
                 _history = new Past[numberofGames];
+                Score = 0;
+                _t = 0;
+                ChoiceCounter = new double[2];
+                PastCounter = new double[4];
+            }
+
+            public PlayerCard(PlayerCard copy)
+            {
+                Player = copy.Player;
+                _history = new Past[copy._history.Length];
                 Score = 0;
                 _t = 0;
                 ChoiceCounter = new double[2];
