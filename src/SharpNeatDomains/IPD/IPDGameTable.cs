@@ -127,7 +127,7 @@ namespace SharpNeat.Domains.IPD
 
             _rankings = new DataGridViewTextBoxColumn();
             _rankings.HeaderText = "Ranking";
-            _rankings.AutoSizeMode = DataGridViewAutoSizeColumnMode.ColumnHeader;
+            _rankings.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
             _rankings.SortMode = DataGridViewColumnSortMode.NotSortable;
             _table.Columns.Add(_rankings);
 

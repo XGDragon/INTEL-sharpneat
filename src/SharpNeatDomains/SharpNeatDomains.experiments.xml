@@ -16,10 +16,10 @@
         TBD.
       </Description>
       <IPDGames>100</IPDGames>
-      <AllowRandomChoice>false</AllowRandomChoice>
-      <RandomPlayerSeed>98465</RandomPlayerSeed>
+      <AllowRandomChoice>true</AllowRandomChoice>
+      <RandomPlayerSeed>9865</RandomPlayerSeed>
       <RandomPlayerCount>0</RandomPlayerCount>
-      <StaticOpponents>AllC,AllD,TFT,STFT,Grudger</StaticOpponents>
+      <StaticOpponents>AllR</StaticOpponents>
       <!--
           AllC,
           AllR,
@@ -28,14 +28,18 @@
           STFT,
           Grudger
         -->
-      <NoveltyArchiveSize>100</NoveltyArchiveSize>
       <NoveltyEvaluationMode>Immediate</NoveltyEvaluationMode>
       <!--
           Disable,
-          Immediate,
-          ArchiveFull,
-          SlowArchiveFull
+          Immediate
         -->
+      <NoveltyMetric>Past</NoveltyMetric>
+            <!--
+          Score,
+          Past,
+          Choice
+        -->
+      <NoveltyK>3</NoveltyK>
       <ObjectiveEvaluationMode>Fitness</ObjectiveEvaluationMode>
       <!--
           Fitness,

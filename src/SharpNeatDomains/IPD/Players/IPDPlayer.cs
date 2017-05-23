@@ -8,8 +8,6 @@ namespace SharpNeat.Domains.IPD
 {
     abstract class IPDPlayer
     {
-        protected static Random _r = new Random();
-
         public abstract string Name { get; }
 
         public override string ToString()

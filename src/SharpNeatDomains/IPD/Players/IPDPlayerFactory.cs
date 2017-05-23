@@ -10,6 +10,8 @@ namespace SharpNeat.Domains.IPD.Players
 {
     class IPDPlayerFactory
     {
+        public static bool AllowRandomChoice { get; set; }
+
         public static IPDPlayerGenerated Create(IPDExperiment.Opponent op)
         {
             switch (op)
@@ -65,17 +67,15 @@ namespace SharpNeat.Domains.IPD.Players
             return new IPDPlayerGenerated("Grudger", tree, IPDGame.Choices.C);
         }
 
-        private Random _r;
+        private Random _r = IPDExperiment.R;
         private int _condId;
         private int _resultId;
         private Func<(int, int)>[,] _table;
 
         private IPDGame.Past[] _past = new IPDGame.Past[4] { IPDGame.Past.T, IPDGame.Past.R, IPDGame.Past.P, IPDGame.Past.S };
 
-        public IPDPlayerFactory(int seed = 0)
+        public IPDPlayerFactory()
         {
-            _r = (seed <= 0) ? new System.Random() : new System.Random(seed);
-
             Func<(int, int)> RR = () => { return (_resultId++, _resultId++); };
             Func<(int, int)> CC = () => { return (_condId++, _condId++); };
             Func<(int, int)> CR = () => { return (_condId++, _resultId++); };
@@ -124,7 +124,7 @@ namespace SharpNeat.Domains.IPD.Players
         private IPDGame.Choices RandomChoice()
         {
             double n = _r.NextDouble();
-            if (n < 0.1)
+            if (n < ((AllowRandomChoice) ? 0.1 : 0.0))
                 return IPDGame.Choices.R;
             else
                 return IPDGame.RandomChoice();

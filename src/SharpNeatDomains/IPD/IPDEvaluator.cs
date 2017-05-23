@@ -6,6 +6,7 @@ using SharpNeat.Network;
 using SharpNeat.Genomes.Neat;
 using System.Collections;
 using Priority_Queue;
+using MathNet;
 using System;
 
 namespace SharpNeat.Domains.IPD
@@ -14,23 +15,20 @@ namespace SharpNeat.Domains.IPD
     {
         public ulong EvaluationCount { get; private set; }
 
-        public bool StopConditionSatisfied { get { return _stopConditionSatisfied; } }
-
-        private bool _noveltyMode = false;
         private bool _stopConditionSatisfied = false;
+        public bool StopConditionSatisfied { get { return _stopConditionSatisfied; } }
         
         private IPDExperiment.Info _info;
         
         private Object _archiveLock = new Object();
-        private List<Behavior> _temporaryArchive = new List<Behavior>();
-        private List<Behavior> _archive;
+        private List<PhenomeInfo> _archive = new List<PhenomeInfo>();
+        private double _archiveThreshold;
+        private double _archiveThresholdFactor = 1.0d;
 
         public IPDEvaluator(IPDExperiment.Info info)
         {
             _info = info;
-            _archive = new List<Behavior>(info.NoveltyArchiveSize + 1);
-
-            Behavior.InitializePermutations(info);
+            PhenomeInfo.Initialize(info);
         }
 
         /// <summary>
@@ -39,229 +37,186 @@ namespace SharpNeat.Domains.IPD
         public FitnessInfo Evaluate(IBlackBox phenome)
         {            
             EvaluationCount++;
-            
-            switch (_info.NoveltyEvaluationMode)
+
+            //switch (_info.NoveltyEvaluationMode)
+            //{
+            //    case IPDExperiment.NoveltyEvaluationMode.Disable:
+            //        _noveltyMode = false; break;
+            //    case IPDExperiment.NoveltyEvaluationMode.Immediate:
+            //        _noveltyMode = _info.CurrentGeneration > 0; break;
+            //    case IPDExperiment.NoveltyEvaluationMode.ArchiveFull:
+            //        _noveltyMode = (_archive.Count == _info.NoveltyArchiveSize && _info.CurrentGeneration > _info.NoveltyArchiveSize); break;
+            //    case IPDExperiment.NoveltyEvaluationMode.SlowArchiveFull:
+            //        _noveltyMode = (_archive.Count == _info.NoveltyArchiveSize && _info.CurrentGeneration > _info.NoveltyArchiveSize * 2); break;
+            //}
+
+            //_stopConditionSatisfied = (pi.Rank == 1.0d);
+
+            var pi = EvaluateBehavior(phenome);
+            double objectiveFitness = pi.Fitness;
+            double noveltyFitness = EvaluateNovelty(pi);
+
+            if (pi.Rank == 1.0d)
             {
-                case IPDExperiment.NoveltyEvaluationMode.Disable:
-                    _noveltyMode = false; break;
-                case IPDExperiment.NoveltyEvaluationMode.Immediate:
-                    _noveltyMode = _info.CurrentGeneration > 0; break;
-                case IPDExperiment.NoveltyEvaluationMode.ArchiveFull:
-                    _noveltyMode = (_archive.Count == _info.NoveltyArchiveSize && _info.CurrentGeneration > _info.NoveltyArchiveSize); break;
-                case IPDExperiment.NoveltyEvaluationMode.SlowArchiveFull:
-                    _noveltyMode = (_archive.Count == _info.NoveltyArchiveSize && _info.CurrentGeneration > _info.NoveltyArchiveSize * 2); break;
+                _stopConditionSatisfied = true;
+                return new FitnessInfo(double.MaxValue, pi.Score);
             }
 
-            double objectiveFitness = EvaluateObjectively(phenome);
-            double noveltyFitness = EvaluateNovelty(phenome);
-
-            _stopConditionSatisfied = (_info.ObjectiveEvaluationMode == IPDExperiment.ObjectiveEvaluationMode.Rank && objectiveFitness == 1.0d);
-
-            return (_noveltyMode)
+            return (_info.NoveltyEvaluationMode == IPDExperiment.NoveltyEvaluationMode.Immediate)
                 ? new FitnessInfo(noveltyFitness, objectiveFitness)
                 : new FitnessInfo(objectiveFitness, noveltyFitness);
         }
 
-        private double EvaluateObjectively(IBlackBox phenome)
+        private PhenomeInfo EvaluateBehavior(IBlackBox phenome)
         {
-            Players.IPDPlayerPhenome p = new Players.IPDPlayerPhenome(phenome);  
-            if (_info.ObjectiveEvaluationMode == IPDExperiment.ObjectiveEvaluationMode.Rank)
-            {
-                int phenomeIndex = _info.OpponentPool.Length;
-                double[] scores = new double[_info.OpponentPool.Length + 1];
-                for (int i = 0; i < phenomeIndex; i++)
-                {
-                    IPDGame g = new IPDGame(_info.NumberOfGames, p, _info.OpponentPool[i]);
-                    g.Run();
+            Players.IPDPlayerPhenome p = new Players.IPDPlayerPhenome(phenome);
+            double[] scores = new double[_info.OpponentPool.Length + 1];
+            int phenomeIndex = _info.OpponentPool.Length;
+            IPDGame[] games = new IPDGame[phenomeIndex];
 
-                    scores[i] += g.GetScore(_info.OpponentPool[i]) + _info.OpponentScores[i];
-                    scores[phenomeIndex] += g.GetScore(p);
-                }
-                var ranks = scores.Rank();
-                return ranks[phenomeIndex] / (double)ranks.Length;
-            }
-            else //IPDExperiment.ObjectiveEvaluationMode.Fitness
+            for (int i = 0; i < phenomeIndex; i++)
             {
-                double score = 0;
-                for (int i = 0; i < _info.OpponentPool.Length; i++)
-                {
-                    phenome.ResetState();
-                    IPDGame g = new IPDGame(_info.NumberOfGames, p, _info.OpponentPool[i]);
-                    g.Run();
-                    score += g.GetScore(p);
-                }
-                return score;
+                games[i] = new IPDGame(_info.NumberOfGames, p, _info.OpponentPool[i]);
+                games[i].Run();
+
+                scores[i] += games[i].GetScore(_info.OpponentPool[i]) + _info.OpponentScores[i];
+                scores[phenomeIndex] += games[i].GetScore(p);
             }
+
+            double score = scores[phenomeIndex];
+            var ranks = scores.Rank();
+            double rank = ranks[phenomeIndex] / (double)ranks.Length;
+            if (rank == 1.0d)
+            {
+                for (int i = 0; i < scores.Length; i++)
+                    if (scores[i] == scores[phenomeIndex] && i != phenomeIndex)
+                        rank -= 0.01d;
+            }
+
+            return new PhenomeInfo(rank, score, games);
         }
 
-        private double EvaluateNovelty(IBlackBox box)
+        private double EvaluateNovelty(PhenomeInfo info)
         {
             if (_info.NoveltyEvaluationMode == IPDExperiment.NoveltyEvaluationMode.Disable)
                 return 0;
 
-            //calculate doubles as per protocol
-            //calculate distance to each behavior in archive
-            //pick (3) nearest ones, calculate average; novelty score is this average
-            //3 is rather ideal as per NetLogo simulation, probably due to proper triangulation
-            //remember novelty scores for each generation, put in X top scores, remove X lowest scores
+            int ii = 0;
+            double CalculateNovelty(PhenomeInfo pi)
+            {
+                _archive.Sort((a, b) => a.Distance(pi).CompareTo(b.Distance(pi)));
+                double dist = 0;
+                for (int i = 0; i < _info.NoveltyK; i++)
+                    dist += _archive[i + ii].Distance(pi);
+                return dist / _info.NoveltyK;
+            }
 
-            Behavior b = new Behavior(box); //calculate doubles
+            if (_archiveThresholdFactor >= 1.1)
+            {
+                _archiveThreshold *= _archiveThresholdFactor;
+                _archiveThresholdFactor = 1.0d;
+            }
 
             lock (_archiveLock)
             {
-                if (_info.CurrentGeneration == 0)
+                if (_archive.Count <= _info.NoveltyK)
                 {
-                    //just remember all these first gen genomes, no novelty being calculated here
-                    _temporaryArchive.Add(b);
+                    _archive.Add(info);
+                    ii = 1;
+                    if (_archive.Count == _info.NoveltyK + 1)    //last free add
+                        _archiveThreshold = _archive.Average(a => { return CalculateNovelty(a); });
                     return 0;
                 }
-                if (_info.HasNewGenerationOccured())
+                else
                 {
-                    if (_info.CurrentGeneration == 1)
+                    double novelty = CalculateNovelty(info);
+                    double threshold = _archiveThreshold * _archiveThresholdFactor;
+                    if (novelty < threshold)
                     {
-                        //fill up the archive with the 0th generation genomes, calculating their novelties. slow but thats ok              
-                        foreach (Behavior temp in _temporaryArchive)
-                            if (_archive.Count < _archive.Capacity - 1)
-                                _archive.Add(temp);
-                        _archive.ForEach(a => { a.CalculateNovelty(_archive); });
-                        _temporaryArchive = new List<Behavior>();
+                        //not a novel phenome
+                        _archiveThresholdFactor -= 0.002;
                     }
                     else
                     {
-                        //add most novel behavior from last generation
-                        Behavior mostNovel;
-                        mostNovel = _temporaryArchive.Max();
-                        //recalculate novelty within archive wrt new member 
-                        _archive.ForEach(a => { a.RecalculateNovelty(mostNovel); });
-                        //add the most novel to the archive
-                        _archive.Add(mostNovel);
-                        //if above archive max, remove the least novel from the archive
-                        if (_archive.Count > _info.NoveltyArchiveSize)
-                            _archive.Remove(_archive.Min());
-                        //a new generation requires a new tempArchive to store all phenome behavior in
-                        _temporaryArchive = new List<Behavior>();
+                        //novel phenome
+                        _archiveThresholdFactor += 0.05;
+                        _archive.Add(info);
                     }
-                }
-                _temporaryArchive.Add(b);
-            }
-
-            b.CalculateNovelty(_archive);
-            return b.Novelty + (_info.NumberOfGames * _info.OpponentPool.Length * (int)IPDGame.Past.T);
-        }
-
-        private class Behavior : FastPriorityQueueNode, IComparable<Behavior>
-        {
-            private const int NearestK = 3;
-
-            private static double[][] _permutations;
-            public static void InitializePermutations(IPDExperiment.Info info)
-            {
-                int max = (int)System.Math.Pow(2, info.InputCount);
-                _permutations = new double[max][];
-                for (int i = 0; i < max; i++)
-                {
-                    _permutations[i] = new double[info.InputCount];
-                    int b = i;
-                    for (int j = info.InputCount - 1; j >= 0; j--)
-                    {
-                        _permutations[i][j] = b % 2;
-                        b /= 2;
-                    }
-                }
-            }
-
-            public double Novelty { get; private set; }
-
-            private double[] _behaviors;
-            private List<Distance> _distances = new List<Distance>();
-
-            public Behavior(IBlackBox box)
-            {
-                _behaviors = new double[_permutations.Length * box.OutputCount];
-
-                int b = 0;
-                for (int i = 0; i < _permutations.Length; i++, b += 2)
-                {
-                    box.ResetState();
-                    box.InputSignalArray.CopyFrom(_permutations[i], 0);
-
-                    box.Activate();
-                    if (!box.IsStateValid)
-                        continue;
-
-                    box.OutputSignalArray.CopyTo(_behaviors, b);
-                }
-            }
-            
-            public void CalculateNovelty(List<Behavior> archive)
-            {
-                if (archive.Count > 0)
-                {
-                    FastPriorityQueue<Distance> dists = new FastPriorityQueue<Distance>(archive.Count + 1);
-
-                    for (int i = 0; i < archive.Count; i++)
-                    {
-                        if (archive[i] == this)
-                            continue;
-
-                        Distance d = new Distance(this, archive[i]);
-                        _distances.Add(d);
-                        dists.Enqueue(d, d.Priority);
-                    }
-
-                    Novelty = GetNearestDistances(dists).Average();
-                }
-                else
-                    Novelty = 0;
-            }
-
-            public void RecalculateNovelty(Behavior newMember)
-            {
-                _distances.Add(new Distance(this, newMember));
-                FastPriorityQueue<Distance> dists = new FastPriorityQueue<Distance>(_distances.Count);
-
-                for (int i = 0; i < _distances.Count; i++)
-                    dists.Enqueue(_distances[i], _distances[i].Priority);
-                
-                Novelty = GetNearestDistances(dists).Average();
-            }
-
-            private float[] GetNearestDistances(FastPriorityQueue<Distance> dists)
-            {
-                float[] nearest = new float[Math.Min(NearestK, dists.Count)];
-                for (int i = 0; i < nearest.Length; i++)
-                    nearest[i] = dists.Dequeue().Priority;
-                return nearest;
-            }
-
-            public int CompareTo(Behavior other)
-            {
-                if (this.Novelty > other.Novelty)
-                    return 1;
-                else if (this.Novelty < other.Novelty)
-                    return -1;
-                return 0;
-            }
-
-            private class Distance : FastPriorityQueueNode
-            {
-                public Behavior Behavior { get; private set; }
-
-                public Distance(Behavior self, Behavior other)
-                {
-                    Priority = (float)MathNet.Numerics.Distance.SAD(self._behaviors, other._behaviors);
-                    //self is the owner of this object
-                    Behavior = other;
+                    return novelty;
                 }
             }
         }
-        ////http://eplex.cs.ucf.edu/noveltysearch/userspage/#howtoimplement
-        ////http://eplex.cs.ucf.edu/papers/lehman_cec11.pdf 3/8
-        
 
         public void Reset()
         {
 
         }
+
+        public class PhenomeInfo
+        {
+            private static IPDExperiment.ObjectiveEvaluationMode _evaluationMode { get; set; }
+            private static IPDExperiment.NoveltyMetric _metric { get; set; }
+
+            public static void Initialize(IPDExperiment.Info info)
+            {
+                switch (_metric = info.NoveltyMetric)
+                {
+                    default:
+                    case IPDExperiment.NoveltyMetric.Score:
+                        _distance = (a, b) => { return Math.Abs(a.Score - b.Score); }; break;
+                    case IPDExperiment.NoveltyMetric.Choice:
+                    case IPDExperiment.NoveltyMetric.Past:
+                        _distance = (a, b) => { return MathNet.Numerics.Distance.SSD(a._pc, b._pc); }; break;
+                }
+            }
+
+            private delegate double DistanceMetric(PhenomeInfo a, PhenomeInfo b);
+            private static DistanceMetric _distance;
+
+            public double Rank { get; private set; }
+            public double Score { get; private set; }
+            public IPDGame[] Games { get; private set; }
+            public double Fitness { get { return (_evaluationMode == IPDExperiment.ObjectiveEvaluationMode.Rank) ? Rank : Score; } }
+
+            private double[] _pc;
+
+            public PhenomeInfo(double rank, double score, IPDGame[] games)
+            {
+                Rank = rank;
+                Score = score;
+                Games = games;
+
+                if (_metric == IPDExperiment.NoveltyMetric.Choice)
+                {
+                    _pc = new double[2];
+                    for (int i = 0; i < games.Length; i++)
+                    {
+                        double[] choices = games[i].GetChoices(games[i].A);
+                        for (int j = 0; j < _pc.Length; j++)
+                            _pc[j] += choices[j];
+                    }
+                }
+                if (_metric == IPDExperiment.NoveltyMetric.Past)
+                {
+                    _pc = new double[4];
+                    for (int i = 0; i < games.Length; i++)
+                    {
+                        double[] pasts = games[i].GetPasts(games[i].A);
+                        for (int j = 0; j < _pc.Length; j++)
+                            _pc[j] += pasts[j];
+                    }
+                }
+            }
+
+            public double Distance(PhenomeInfo other)
+            {
+                return _distance(this, other);
+            }
+
+            public override string ToString()
+            {
+                return "Score: " + Score.ToString();
+            }
+        }        
     }
 }

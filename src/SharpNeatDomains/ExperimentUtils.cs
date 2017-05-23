@@ -116,8 +116,6 @@ namespace SharpNeat.Domains
                 isc[i] = new Tuple<int, T>(i, scores[i]);
             Array.Sort(isc, (x, y) => { return x.Item2.CompareTo(y.Item2); });
 
-
-
             int[] ranks = new int[scores.Length];
             for (int i = 0; i < scores.Length; i++)
                 ranks[isc[i].Item1] = i + 1;
