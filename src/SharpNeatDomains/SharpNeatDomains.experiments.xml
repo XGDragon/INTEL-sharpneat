@@ -29,7 +29,7 @@
           Grudger
         -->
       <NoveltyArchiveSize>100</NoveltyArchiveSize>
-      <NoveltyEvaluationMode>Disable</NoveltyEvaluationMode>
+      <NoveltyEvaluationMode>Immediate</NoveltyEvaluationMode>
       <!--
           Disable,
           Immediate,
@@ -41,7 +41,7 @@
           Fitness,
           Rank
         -->
-      <PastInputReach>3</PastInputReach>
+      <PastInputReach>5</PastInputReach>
 
     </Config>
   </Experiment>

@@ -98,6 +98,7 @@ namespace SharpNeat.Domains.IPD
         {
             if (_info.NoveltyEvaluationMode == IPDExperiment.NoveltyEvaluationMode.Disable)
                 return 0;
+
             //calculate doubles as per protocol
             //calculate distance to each behavior in archive
             //pick (3) nearest ones, calculate average; novelty score is this average
@@ -105,27 +106,46 @@ namespace SharpNeat.Domains.IPD
             //remember novelty scores for each generation, put in X top scores, remove X lowest scores
 
             Behavior b = new Behavior(box); //calculate doubles
-            b.CalculateNovelty(_archive);
 
             lock (_archiveLock)
             {
+                if (_info.CurrentGeneration == 0)
+                {
+                    //just remember all these first gen genomes, no novelty being calculated here
+                    _temporaryArchive.Add(b);
+                    return 0;
+                }
                 if (_info.HasNewGenerationOccured())
                 {
-                    Behavior mostNovel;
-                    mostNovel = _temporaryArchive.Max();
-                    //recalculate novelty within archive wrt new member 
-                    _archive.ForEach(a => { a.RecalculateNovelty(mostNovel); });
-                    //add the most novel to the archive
-                    _archive.Add(mostNovel);
-                    //if above archive max, remove the least novel from the archive
-                    if (_archive.Count > _info.NoveltyArchiveSize)
-                        _archive.Remove(_archive.Min());
-                    //a new generation requires a new tempArchive to store all phenome behavior in
-                    _temporaryArchive = new List<Behavior>();
+                    if (_info.CurrentGeneration == 1)
+                    {
+                        //fill up the archive with the 0th generation genomes, calculating their novelties. slow but thats ok              
+                        foreach (Behavior temp in _temporaryArchive)
+                            if (_archive.Count < _archive.Capacity - 1)
+                                _archive.Add(temp);
+                        _archive.ForEach(a => { a.CalculateNovelty(_archive); });
+                        _temporaryArchive = new List<Behavior>();
+                    }
+                    else
+                    {
+                        //add most novel behavior from last generation
+                        Behavior mostNovel;
+                        mostNovel = _temporaryArchive.Max();
+                        //recalculate novelty within archive wrt new member 
+                        _archive.ForEach(a => { a.RecalculateNovelty(mostNovel); });
+                        //add the most novel to the archive
+                        _archive.Add(mostNovel);
+                        //if above archive max, remove the least novel from the archive
+                        if (_archive.Count > _info.NoveltyArchiveSize)
+                            _archive.Remove(_archive.Min());
+                        //a new generation requires a new tempArchive to store all phenome behavior in
+                        _temporaryArchive = new List<Behavior>();
+                    }
                 }
                 _temporaryArchive.Add(b);
-            }            
+            }
 
+            b.CalculateNovelty(_archive);
             return b.Novelty + (_info.NumberOfGames * _info.OpponentPool.Length * (int)IPDGame.Past.T);
         }
 
@@ -181,6 +201,9 @@ namespace SharpNeat.Domains.IPD
 
                     for (int i = 0; i < archive.Count; i++)
                     {
+                        if (archive[i] == this)
+                            continue;
+
                         Distance d = new Distance(this, archive[i]);
                         _distances.Add(d);
                         dists.Enqueue(d, d.Priority);
