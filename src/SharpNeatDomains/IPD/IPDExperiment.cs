@@ -24,7 +24,9 @@ namespace SharpNeat.Domains.IPD
             TFT,
             STFT,
             Grudger,
-            ZD,
+            GTFT,
+            ZDGTFT_2,
+            ZD_2,
             Pavlov,
             Adaptive
         }
@@ -262,8 +264,11 @@ namespace SharpNeat.Domains.IPD
             // Create genome decoder.
             IGenomeDecoder<NeatGenome, IBlackBox> genomeDecoder = CreateGenomeDecoder();
 
+            // All-encompassing info object
+            _info = new Info(this, ea, genomeDecoder);
+
             // Create IBlackBox evaluator.
-            IPDEvaluator evaluator = new IPDEvaluator(_info = new Info(this, ea, genomeDecoder));
+            IPDEvaluator evaluator = new IPDEvaluator(ref _info);
 
             // Create a genome list evaluator. This packages up the genome decoder with the genome evaluator.
             IGenomeListEvaluator<NeatGenome> innerEvaluator = new ParallelGenomeListEvaluator<NeatGenome, IBlackBox>(genomeDecoder, evaluator, _parallelOptions);
@@ -294,7 +299,7 @@ namespace SharpNeat.Domains.IPD
         /// </summary>
         public AbstractDomainView CreateDomainView()
         {
-            return new IPDGameTable(CreateGenomeDecoder(), _info);
+            return new IPDGameTable(CreateGenomeDecoder(), ref _info);
         }
 
         #endregion
@@ -327,6 +332,7 @@ namespace SharpNeat.Domains.IPD
 
             public int PopulationSize { get { return _exp._populationSize; } }
             public int CurrentGeneration { get { return (int)_genGet(); } }
+            public System.Func<IBlackBox> BestNoveltyGenome { get; set; }
             public IBlackBox BestGenome { get { return _boxGet(); } }
             public double BestFitness { get { return _fitGet(); } }
 
@@ -370,12 +376,30 @@ namespace SharpNeat.Domains.IPD
                         if (i != j) //currently not against each other but..
                         {
                             IPDGame g = new IPDGame(NumberOfGames, pool[i], pool[j]);
-                            g.Run();
+                            var s = g.Evaluate(RandomRobustCheck);
+
                             OpponentPoolGames[i, j] = g;
                             OpponentPoolGames[j, i] = g;
 
-                            OpponentScores[i] += g.GetScore(pool[i]);
-                            OpponentScores[j] += g.GetScore(pool[j]);
+                            OpponentScores[i] += s.a;
+                            OpponentScores[j] += s.b;
+                            //g.Run();
+                            //double[] s = new double[2] { g.GetScore(pool[i]), g.GetScore(pool[j]) };
+
+                            //if (g.HasRandom)
+                            //{
+                            //    for (int r = 1; r < RandomRobustCheck; r++)
+                            //    {
+                            //        g.Run();
+                            //        s[0] += games[i].GetScore(_info.OpponentPool[i]);
+                            //        s[1] += games[i].GetScore(p);
+                            //    }
+                            //    s[0] /= _info.RandomRobustCheck;
+                            //    s[1] /= _info.RandomRobustCheck;
+                            //}
+
+                            //OpponentScores[i] += g.GetScore(pool[i]);
+                            //OpponentScores[j] += g.GetScore(pool[j]);
                         }
                     }
                 }

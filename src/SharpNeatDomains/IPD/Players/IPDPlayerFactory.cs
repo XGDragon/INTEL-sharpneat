@@ -18,46 +18,28 @@ namespace SharpNeat.Domains.IPD.Players
             {
                 case IPDExperiment.Opponent.AllR:
                 default:
-                    return CreateAllX("AllR", IPDGame.Choices.R);
+                    return new IPDPlayerZD("AllR", 0.5, 0.5, 0.5, 0.5, IPDGame.Choices.R);
                 case IPDExperiment.Opponent.AllC:
-                    return CreateAllX("AllC", IPDGame.Choices.C);
+                    return new IPDPlayerZD("AllC", 1, 1, 1, 1, IPDGame.Choices.C);
                 case IPDExperiment.Opponent.AllD:
-                    return CreateAllX("AllD", IPDGame.Choices.D);
+                    return new IPDPlayerZD("AllD", 0, 0, 0, 0, IPDGame.Choices.D);
                 case IPDExperiment.Opponent.TFT:
-                    return CreateXTFT("TFT", IPDGame.Choices.C);
+                    return new IPDPlayerZD("TFT", 1, 0, 1, 0, IPDGame.Choices.C);
                 case IPDExperiment.Opponent.STFT:
-                    return CreateXTFT("STFT", IPDGame.Choices.D);
+                    return new IPDPlayerZD("STFT", 1, 0, 1, 0, IPDGame.Choices.D);
+                case IPDExperiment.Opponent.GTFT:
+                    return new IPDPlayerZD("GTFT", 0.5, 0, 0.5, 0, IPDGame.Choices.C);
                 case IPDExperiment.Opponent.Grudger:
                     return CreateGrudger();
                 case IPDExperiment.Opponent.Pavlov:
-                    return CreatePavlov();
+                    return new IPDPlayerZD("Pavlov", 1, 0, 0, 1, IPDGame.Choices.C);
                 case IPDExperiment.Opponent.Adaptive:
                     return new IPDPlayerAdaptive();
-                case IPDExperiment.Opponent.ZD:
-                    return new IPDPlayerZD();
+                case IPDExperiment.Opponent.ZDGTFT_2:
+                    return new IPDPlayerZD("ZDGTFT-2", 1, 1/8, 1, 1/4, IPDGame.Choices.C);
+                case IPDExperiment.Opponent.ZD_2:
+                    return new IPDPlayerZD("ZD-2", 8/9, 1/2, 1/3, 0, IPDGame.Choices.C);
             }
-        }
-
-        private static IPDPlayerGenerated CreateXTFT(string name, IPDGame.Choices startingChoice)
-        {
-            DecisionTree tree = new DecisionTree(new Dictionary<int, Node>()
-            {
-                { 0, new PayoffConditionalNode(1, 2, 1, IPDGame.Past.P, IPDGame.Past.S) },
-                { 1, new AssignResultNode(new QFunction(IPDGame.Choices.D))},
-                { 2, new AssignResultNode(new QFunction(IPDGame.Choices.C))}
-            });
-
-            return new IPDPlayerGenerated(name, tree, startingChoice);
-        }
-
-        private static IPDPlayerGenerated CreateAllX(string name, IPDGame.Choices X)
-        {
-            DecisionTree tree = new DecisionTree(new Dictionary<int, Node>()
-            {
-                { 0, new AssignResultNode(new QFunction(X))},
-            }, QFunction.Default);
-
-            return new IPDPlayerGenerated(name, tree, X);
         }
 
         private static IPDPlayerGenerated CreateGrudger()
@@ -71,18 +53,6 @@ namespace SharpNeat.Domains.IPD.Players
             });
 
             return new IPDPlayerGenerated("Grudger", tree, IPDGame.Choices.C);
-        }
-
-        private static IPDPlayerGenerated CreatePavlov()
-        {
-            DecisionTree tree = new DecisionTree(new Dictionary<int, Node>()
-            {
-                { 0, new PayoffConditionalNode(1, 2, 1, IPDGame.Past.T, IPDGame.Past.S) },
-                { 1, new AssignResultNode(new QFunction(IPDGame.Choices.D))},
-                { 2, new AssignResultNode(new QFunction(IPDGame.Choices.C))}
-            });
-
-            return new IPDPlayerGenerated("Pavlov", tree, IPDGame.Choices.C);
         }
 
         private Random _r;

@@ -19,17 +19,19 @@
       <RandomPlayerSeed>9865</RandomPlayerSeed>
       <RandomPlayerCount>0</RandomPlayerCount>
       <RandomRobustCheck>100</RandomRobustCheck>
-      <StaticOpponents>AllD,AllR,AllC,Adaptive,TFT,STFT,Grudger,Pavlov</StaticOpponents>
+      <StaticOpponents>AllR,GTFT,ZD_2,ZDGTFT_2,AllC,TFT,Grudger</StaticOpponents>
       <!--
           AllC,
-          AllR,
           AllD,
+          AllR,
           TFT,
           STFT,
           Grudger,
+          GTFT,
+          ZDGTFT_2,
+          ZD_2,
           Pavlov,
-          Adaptive,
-          ZD
+          Adaptive
         -->
       <EvaluationMode>Novelty</EvaluationMode>
       <!--
@@ -37,7 +39,7 @@
           Rank,   (objective)
           Novelty (novelty)
         -->
-      <NoveltyMetric>Score</NoveltyMetric>
+      <NoveltyMetric>Past</NoveltyMetric>
             <!--
           Score,
           Past,
