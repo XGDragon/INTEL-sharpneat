@@ -45,18 +45,18 @@ namespace SharpNeat.Domains.IPD
             var pi = EvaluateBehavior(phenome);
             double noveltyFitness = EvaluateNovelty(pi);
 
-            if (pi.Rank == 1.0d && gen > 0)
+            if (_info.EvaluationMode == IPDExperiment.EvaluationMode.Rank && pi.Rank == 1.0d && gen > 0)
             {
                 lock (_stopLock)
                 {
                     _stopConditionSatisfied = true;
-                    return new FitnessInfo(_info.BestFitness * _info.BestFitness, pi.Score);
+                    return new FitnessInfo(_info.BestFitness * 10, pi.Score);
                 }
             }
 
             return (_info.EvaluationMode == IPDExperiment.EvaluationMode.Novelty)
                 ? new FitnessInfo(noveltyFitness, pi.Score)
-                : new FitnessInfo(pi.Fitness, pi.Score);
+                : new FitnessInfo(pi.Fitness, pi.Rank);
         }
 
         private PhenomeInfo EvaluateBehavior(IBlackBox phenome)
@@ -150,8 +150,8 @@ namespace SharpNeat.Domains.IPD
                         //novel phenome
                         _archiveThresholdFactor += 0.05;
                         _archive.Add(info);
-                        if (_archive.Count > 100)
-                            _archive.RemoveAt(0);
+                        //if (_archive.Count > 100)
+                        //    _archive.RemoveAt(0);
                     }
                     return novelty;
                 }
@@ -234,9 +234,9 @@ namespace SharpNeat.Domains.IPD
 
             public int CompareTo(PhenomeInfo other)
             {
-                if (this.Rank > other.Rank)
+                if (this.Score > other.Score)
                     return 1;
-                else if (this.Rank < other.Rank)
+                else if (this.Score < other.Score)
                     return -1;
                 else return 0;
             }

@@ -10,7 +10,7 @@ namespace SharpNeat.Domains.IPD.Players
 {
     class IPDPlayerFactory
     {
-        public static bool AllowRandomChoice { get; set; }
+        private const double RANDOMPLAYER_RCHANCE = 0.0;
 
         public static IPDPlayer Create(IPDExperiment.Opponent op)
         {
@@ -36,9 +36,9 @@ namespace SharpNeat.Domains.IPD.Players
                 case IPDExperiment.Opponent.Adaptive:
                     return new IPDPlayerAdaptive();
                 case IPDExperiment.Opponent.ZDGTFT_2:
-                    return new IPDPlayerZD("ZDGTFT-2", 1, 1/8, 1, 1/4, IPDGame.Choices.C);
+                    return new IPDPlayerZD("ZDGTFT-2", 1, 1.0/8, 1, 1.0/4, IPDGame.Choices.C);
                 case IPDExperiment.Opponent.ZD_2:
-                    return new IPDPlayerZD("ZD-2", 8/9, 1/2, 1/3, 0, IPDGame.Choices.C);
+                    return new IPDPlayerZD("ZD-2", 8.0/9, 1.0/2, 1.0/3, 0, IPDGame.Choices.C);
             }
         }
 
@@ -54,8 +54,8 @@ namespace SharpNeat.Domains.IPD.Players
 
             return new IPDPlayerGenerated("Grudger", tree, IPDGame.Choices.C);
         }
-
-        private Random _r;
+        
+        private Random _factoryRandom;
         private int _condId;
         private int _resultId;
         private Func<(int, int)>[,] _table;
@@ -64,13 +64,13 @@ namespace SharpNeat.Domains.IPD.Players
 
         public IPDPlayerFactory(int seed)
         {
-            _r = (seed == 0) ? new Random() : new Random(seed);
+            _factoryRandom = (seed == 0) ? new Random() : new Random(seed);
 
             Func<(int, int)> RR = () => { return (_resultId++, _resultId++); };
             Func<(int, int)> CC = () => { return (_condId++, _condId++); };
             Func<(int, int)> CR = () => { return (_condId++, _resultId++); };
             Func<(int, int)> RC = () => { return (_resultId++, _condId++); };
-            Func<(int, int)> T  = () => { return (_r.NextDouble() < 0.5) ? (_resultId++, _condId++) : (_condId++, _resultId++); };
+            Func<(int, int)> T  = () => { return (_factoryRandom.NextDouble() < 0.5) ? (_resultId++, _condId++) : (_condId++, _resultId++); };
             _table = new Func<(int, int)>[3, 4]
             {
                 { RR, RR, RR, RR },
@@ -89,8 +89,8 @@ namespace SharpNeat.Domains.IPD.Players
 
             for (int i = 0; i < condNodes.Length; i++)
             {
-                int a = (_r.NextDouble() < 0.5d) ? 0 : 1;
-                int b = (_r.NextDouble() < 0.5d) ? 0 : 2;
+                int a = (_factoryRandom.NextDouble() < 0.5d) ? 0 : 1;
+                int b = (_factoryRandom.NextDouble() < 0.5d) ? 0 : 2;
 
                 int x = Math.Min(condNodes.Length - _condId, 2);
                 int y = a + b;
@@ -103,7 +103,7 @@ namespace SharpNeat.Domains.IPD.Players
             for (int i = condNodes.Length; i < _resultId; i++)
                 treeDict.Add(i, CreateResultNode());
 
-            string name = _r.GenerateRandomFirstAndLastName();
+            string name = _factoryRandom.GenerateRandomFirstAndLastName();
             IPDGame.Choices[] c = new IPDGame.Choices[RandomAmount()];
             for (int i = 0; i < c.Length; i++)
                 c[i] = RandomChoice();
@@ -113,8 +113,8 @@ namespace SharpNeat.Domains.IPD.Players
 
         private IPDGame.Choices RandomChoice()
         {
-            double n = _r.NextDouble();
-            if (n < 0.1)
+            double n = _factoryRandom.NextDouble();
+            if (n < RANDOMPLAYER_RCHANCE)
                 return IPDGame.Choices.R;
             else
                 return IPDGame.RandomChoice();
@@ -127,7 +127,7 @@ namespace SharpNeat.Domains.IPD.Players
         {
             int a = 0;
             double n = max;
-            while (a <= max && _r.NextDouble() < n-- / max)
+            while (a <= max && _factoryRandom.NextDouble() < n-- / max)
                 a++;
             return a;
         }
@@ -135,7 +135,7 @@ namespace SharpNeat.Domains.IPD.Players
         #region QFunction
         private QFunction CreateQFunction()
         {
-            double n = _r.NextDouble();
+            double n = _factoryRandom.NextDouble();
             if (n < 0.75)
                 return new QFunction(CreateQFunctionSequence());
             else
@@ -145,7 +145,7 @@ namespace SharpNeat.Domains.IPD.Players
 
         private QFunction.Values RandomQValue()
         {
-            double n = _r.NextDouble();
+            double n = _factoryRandom.NextDouble();
             if (n < 0.25)
                 return QFunction.Values.Alpha;
             if (n < 0.50)
@@ -183,14 +183,14 @@ namespace SharpNeat.Domains.IPD.Players
 
         private ConditionalNode CreateConditionalNode(int leftNode, int rightNode)
         {
-            if (_r.NextDouble() < 0.5)
+            if (_factoryRandom.NextDouble() < 0.5)
                 return CreatePayoffNode(leftNode, rightNode);
             else return CreateValueNode(leftNode, rightNode);
         }
 
         private PayoffConditionalNode CreatePayoffNode(int leftNode, int rightNode)
         {
-            int[] r = MathNet.Numerics.Combinatorics.GeneratePermutation(4, _r);            
+            int[] r = MathNet.Numerics.Combinatorics.GeneratePermutation(4, _factoryRandom);            
             IPDGame.Past[] p = new IPDGame.Past[RandomAmount(3)];
             for (int i = 0; i < p.Length; i++)
                 p[i] = _past[r[i]];

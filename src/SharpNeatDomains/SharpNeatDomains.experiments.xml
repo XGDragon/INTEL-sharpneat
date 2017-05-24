@@ -19,9 +19,9 @@
       <RandomPlayerSeed>9865</RandomPlayerSeed>
       <RandomPlayerCount>0</RandomPlayerCount>
       <RandomRobustCheck>100</RandomRobustCheck>
-      <StaticOpponents>AllR,GTFT,ZD_2,ZDGTFT_2,AllC,TFT,Grudger</StaticOpponents>
+      <StaticOpponents>ZD_2</StaticOpponents>
       <!--
-          AllC,
+          AllC,   
           AllD,
           AllR,
           TFT,

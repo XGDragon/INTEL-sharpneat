@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using SharpNeat.Phenomes;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace SharpNeat.Domains.IPD.Players
 {
@@ -11,8 +12,6 @@ namespace SharpNeat.Domains.IPD.Players
     {
         private string _name;
         public override string Name => _name;
-
-        private System.Random _R = new Random();
 
         private IPDGame.Choices _start;
 
@@ -43,8 +42,7 @@ namespace SharpNeat.Domains.IPD.Players
                 game.HasRandom = _hasRandom;
                 return _start;
             }
-
-            double R = _R.NextDouble();
+            
             switch (game.GetPast(this, game.T - 1))
             {
                 case IPDGame.Past.T:
@@ -67,12 +65,25 @@ namespace SharpNeat.Domains.IPD.Players
             else if (p == 1)
                 return IPDGame.Choices.C;
             else
-                return (_R.NextDouble() < p) ? IPDGame.Choices.C : IPDGame.Choices.D;
+                return (R.Next() < p) ? IPDGame.Choices.C : IPDGame.Choices.D;
         }
 
         public override void Reset()
         {
 
+        }
+
+        private static class R
+        {
+            static int seed = Environment.TickCount;
+
+            static readonly ThreadLocal<Random> random =
+                new ThreadLocal<Random>(() => new Random(Interlocked.Increment(ref seed)));
+
+            public static double Next()
+            {
+                return random.Value.NextDouble();
+            }
         }
     }
 }
