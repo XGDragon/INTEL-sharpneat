@@ -148,6 +148,7 @@
       <DependentUpon>IPDGameTable.cs</DependentUpon>
     </Compile>
     <Compile Include="IPD\Players\IPDPlayerAdaptive.cs" />
+    <Compile Include="IPD\Players\IPDPlayerPattern.cs" />
     <Compile Include="IPD\Players\IPDPlayerZD.cs" />
     <Compile Include="IPD\Players\Tree\QFunction.cs" />
     <Compile Include="IPD\IPDEvaluator.cs" />

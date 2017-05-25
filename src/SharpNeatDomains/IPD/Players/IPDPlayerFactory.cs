@@ -14,6 +14,7 @@ namespace SharpNeat.Domains.IPD.Players
 
         public static IPDPlayer Create(IPDExperiment.Opponent op)
         {
+            string o = op.ToString();
             switch (op)
             {
                 case IPDExperiment.Opponent.AllR:
@@ -39,6 +40,8 @@ namespace SharpNeat.Domains.IPD.Players
                     return new IPDPlayerZD("ZDGTFT-2", 1, 1.0/8, 1, 1.0/4, IPDGame.Choices.C);
                 case IPDExperiment.Opponent.ZD_2:
                     return new IPDPlayerZD("ZD-2", 8.0/9, 1.0/2, 1.0/3, 0, IPDGame.Choices.C);
+                case IPDExperiment.Opponent.PatternCCD:
+                    return new IPDPlayerPattern("PatternCCD", new IPDGame.Choices[] { IPDGame.Choices.C, IPDGame.Choices.C, IPDGame.Choices.D });
             }
         }
 

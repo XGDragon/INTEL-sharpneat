@@ -31,7 +31,8 @@
           ZDGTFT_2,
           ZD_2,
           Pavlov,
-          Adaptive
+          Adaptive,
+          PatternCCD
         -->
       <EvaluationMode>Novelty</EvaluationMode>
       <!--
