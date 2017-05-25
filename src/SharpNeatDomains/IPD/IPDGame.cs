@@ -33,7 +33,7 @@ namespace SharpNeat.Domains.IPD
 
         public int T { get; private set; }
         public int Length { get; private set; }
-        public bool HasRandom { get; private set; }
+        public bool HasRandom { get; set; }
 
         public IPDPlayer A { get { return _a.Player; } }
         public IPDPlayer B { get { return _b.Player; } }
@@ -47,6 +47,43 @@ namespace SharpNeat.Domains.IPD
             _b = new PlayerCard(b, numberOfGames);
             Length = numberOfGames;
             HasRandom = false;
+        }
+
+        public (double a, double b) Evaluate(int robustness)
+        {
+            //games[i].Run();
+            //double[] s = new double[2] { games[i].GetScore(_info.OpponentPool[i]), games[i].GetScore(p) };
+
+            //if (games[i].HasRandom)
+            //{
+            //    for (int r = 1; r < _info.RandomRobustCheck; r++)
+            //    {
+            //        games[i].Run();
+            //        s[0] += games[i].GetScore(_info.OpponentPool[i]);
+            //        s[1] += games[i].GetScore(p);
+            //    }
+            //    s[0] /= _info.RandomRobustCheck;
+            //    s[1] /= _info.RandomRobustCheck;
+            //}
+
+            //scores[i] += s[0] + _info.OpponentScores[i];
+            //scores[phenomeIndex] += s[1];
+            Run();
+            double[] s = new double[2] { GetScore(A), GetScore(B) };
+
+            if (HasRandom)
+            {
+                for (int r = 1; r < robustness; r++)
+                {
+                    Run();
+                    s[0] += GetScore(A);
+                    s[1] += GetScore(B);
+                }
+                s[0] /= robustness;
+                s[1] /= robustness;
+            }
+
+            return (s[0], s[1]);
         }
 
         public void Run()

@@ -30,7 +30,7 @@ namespace SharpNeat.Domains.IPD
         private DataGridViewColumn _cumulative;
         private DataGridViewColumn _rankings;
 
-        public IPDGameTable(IGenomeDecoder<NeatGenome, IBlackBox> genomeDecoder, IPDExperiment.Info info)
+        public IPDGameTable(IGenomeDecoder<NeatGenome, IBlackBox> genomeDecoder, ref IPDExperiment.Info info)
         {
             InitializeComponent();
 
@@ -65,18 +65,21 @@ namespace SharpNeat.Domains.IPD
 
         public override void RefreshView(object genome)
         {
-            NeatGenome neatGenome = genome as NeatGenome;
-            var phenome = _genomeDecoder.Decode(neatGenome);
+            IBlackBox phenome;
+            if (_info.EvaluationMode == IPDExperiment.EvaluationMode.Novelty)
+                phenome = _info.BestNoveltyGenome();
+            else
+                phenome = _genomeDecoder.Decode(genome as NeatGenome);
 
             _players[0] = new Players.IPDPlayerPhenome(phenome);
             for (int i = 1; i < _players.Length; i++)
             {
-                phenome.ResetState();
                 var g = new IPDGame(_info.NumberOfGames, _players[0], _players[i]);
                 g.Run();
                 _games[0, i] = g;
                 _games[i, 0] = g;
             }
+            
 
             UpdateTable();
         }

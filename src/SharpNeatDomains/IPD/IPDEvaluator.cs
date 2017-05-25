@@ -13,8 +13,6 @@ namespace SharpNeat.Domains.IPD
 {
     class IPDEvaluator : IPhenomeEvaluator<IBlackBox>
     {
-        private double MAX_FITNESS = 100000;
-
         public ulong EvaluationCount { get; private set; }
 
         private Object _stopLock = new Object();
@@ -28,9 +26,11 @@ namespace SharpNeat.Domains.IPD
         private double _archiveThreshold;
         private double _archiveThresholdFactor = 1.0d;
 
-        public IPDEvaluator(IPDExperiment.Info info)
+        public IPDEvaluator(ref IPDExperiment.Info info)
         {
             _info = info;
+            _info.BestNoveltyGenome = () => { var m = _archive.Max(); return m.Phenome; };
+
             PhenomeInfo.Initialize(info);
         }
 
@@ -40,23 +40,23 @@ namespace SharpNeat.Domains.IPD
         public FitnessInfo Evaluate(IBlackBox phenome)
         {
             EvaluationCount++;
+            int gen = _info.CurrentGeneration;
 
             var pi = EvaluateBehavior(phenome);
-            double objectiveFitness = pi.Fitness;
             double noveltyFitness = EvaluateNovelty(pi);
 
-            if (pi.Rank == 1.0d && _info.CurrentGeneration > 0)
+            if (_info.EvaluationMode == IPDExperiment.EvaluationMode.Rank && pi.Rank == 1.0d && gen > 0)
             {
                 lock (_stopLock)
                 {
                     _stopConditionSatisfied = true;
-                    return new FitnessInfo(_info.BestFitness * _info.BestFitness, pi.Score);
+                    return new FitnessInfo(_info.BestFitness * 10, pi.Score);
                 }
             }
 
             return (_info.EvaluationMode == IPDExperiment.EvaluationMode.Novelty)
-                ? new FitnessInfo(noveltyFitness, objectiveFitness)
-                : new FitnessInfo(objectiveFitness, noveltyFitness);
+                ? new FitnessInfo(noveltyFitness, pi.Score)
+                : new FitnessInfo(pi.Fitness, pi.Rank);
         }
 
         private PhenomeInfo EvaluateBehavior(IBlackBox phenome)
@@ -68,24 +68,27 @@ namespace SharpNeat.Domains.IPD
 
             for (int i = 0; i < phenomeIndex; i++)
             {
-                games[i] = new IPDGame(_info.NumberOfGames, p, _info.OpponentPool[i]);
-                games[i].Run();
-                double[] s = new double[2] { games[i].GetScore(_info.OpponentPool[i]), games[i].GetScore(p) };
+                games[i] = new IPDGame(_info.NumberOfGames, _info.OpponentPool[i], p);
+                var s = games[i].Evaluate(_info.RandomRobustCheck);
+                scores[i] += s.a + _info.OpponentScores[i];
+                scores[phenomeIndex] += s.b;
+                //games[i].Run();
+                //double[] s = new double[2] { games[i].GetScore(_info.OpponentPool[i]), games[i].GetScore(p) };
 
-                if (games[i].HasRandom)
-                {
-                    for (int r = 1; r < _info.RandomRobustCheck; r++)
-                    {
-                        games[i].Run();
-                        s[0] += games[i].GetScore(_info.OpponentPool[i]);
-                        s[1] += games[i].GetScore(p);
-                    }
-                    s[0] /= _info.RandomRobustCheck;
-                    s[1] /= _info.RandomRobustCheck;
-                }
+                //if (games[i].HasRandom)
+                //{
+                //    for (int r = 1; r < _info.RandomRobustCheck; r++)
+                //    {
+                //        games[i].Run();
+                //        s[0] += games[i].GetScore(_info.OpponentPool[i]);
+                //        s[1] += games[i].GetScore(p);
+                //    }
+                //    s[0] /= _info.RandomRobustCheck;
+                //    s[1] /= _info.RandomRobustCheck;
+                //}
 
-                scores[i] += s[0] + _info.OpponentScores[i];
-                scores[phenomeIndex] += s[1];
+                //scores[i] += s[0] + _info.OpponentScores[i];
+                //scores[phenomeIndex] += s[1];
             }
 
             double score = scores[phenomeIndex];
@@ -99,7 +102,7 @@ namespace SharpNeat.Domains.IPD
                         rank -= 0.01d;
             }
 
-            return new PhenomeInfo(rank, score, games);
+            return new PhenomeInfo(phenome, rank, score, games);
         }
 
         private double EvaluateNovelty(PhenomeInfo info)
@@ -147,6 +150,8 @@ namespace SharpNeat.Domains.IPD
                         //novel phenome
                         _archiveThresholdFactor += 0.05;
                         _archive.Add(info);
+                        //if (_archive.Count > 100)
+                        //    _archive.RemoveAt(0);
                     }
                     return novelty;
                 }
@@ -158,13 +163,14 @@ namespace SharpNeat.Domains.IPD
 
         }
 
-        public class PhenomeInfo
+        public class PhenomeInfo : IComparable<PhenomeInfo>
         {
             private static IPDExperiment.EvaluationMode _evaluationMode { get; set; }
             private static IPDExperiment.NoveltyMetric _metric { get; set; }
 
             public static void Initialize(IPDExperiment.Info info)
             {
+                _evaluationMode = info.EvaluationMode;
                 switch (_metric = info.NoveltyMetric)
                 {
                     default:
@@ -179,6 +185,7 @@ namespace SharpNeat.Domains.IPD
             private delegate double DistanceMetric(PhenomeInfo a, PhenomeInfo b);
             private static DistanceMetric _distance;
 
+            public IBlackBox Phenome { get; private set; }
             public double Rank { get; private set; }
             public double Score { get; private set; }
             public IPDGame[] Games { get; private set; }
@@ -186,8 +193,9 @@ namespace SharpNeat.Domains.IPD
 
             private double[] _pc;
 
-            public PhenomeInfo(double rank, double score, IPDGame[] games)
+            public PhenomeInfo(IBlackBox phenome, double rank, double score, IPDGame[] games)
             {
+                Phenome = phenome;
                 Rank = rank;
                 Score = score;
                 Games = games;
@@ -222,6 +230,15 @@ namespace SharpNeat.Domains.IPD
             public override string ToString()
             {
                 return "Score: " + Score.ToString();
+            }
+
+            public int CompareTo(PhenomeInfo other)
+            {
+                if (this.Score > other.Score)
+                    return 1;
+                else if (this.Score < other.Score)
+                    return -1;
+                else return 0;
             }
         }        
     }
