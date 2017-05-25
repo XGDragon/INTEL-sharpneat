@@ -23,23 +23,26 @@ namespace SharpNeat.Domains.IPD
             AllR,
             TFT,
             STFT,
-            Grudger
+            Grudger,
+            ZD,
+            Pavlov,
+            Adaptive
         }
 
-        public enum NoveltyEvaluationMode
+        public enum EvaluationMode
         {
-            Disable,
-            Immediate,
-            ArchiveFull,
-            SlowArchiveFull
+            Score,
+            Rank,
+            Novelty
         }
 
-        public enum ObjectiveEvaluationMode
+        public enum NoveltyMetric
         {
-            Fitness,
-            Rank
+            Score,
+            Past,
+            Choice
         }
-
+        
         private static readonly ILog __log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         NeatEvolutionAlgorithmParameters _eaParams;
@@ -53,12 +56,13 @@ namespace SharpNeat.Domains.IPD
         string _description;
         ParallelOptions _parallelOptions;
 
+        int _randomRobustCheck;
         int _pastInputReach;
         int _numberOfGames;
         IPDPlayer[] _opponentPool;
-        int _noveltyArchiveSize;
-        NoveltyEvaluationMode _noveltyEvaluationMode;
-        ObjectiveEvaluationMode _objectiveEvaluationMode;
+        EvaluationMode _evaluationMode;
+        NoveltyMetric _noveltyMetric;
+        int _noveltyK;
 
         Info _info;
 
@@ -156,13 +160,13 @@ namespace SharpNeat.Domains.IPD
             int seed = XmlUtils.GetValueAsInt(xmlConfig, "RandomPlayerSeed");
             int randoms = XmlUtils.GetValueAsInt(xmlConfig, "RandomPlayerCount");
             string[] opps = XmlUtils.GetValueAsString(xmlConfig, "StaticOpponents").Split(',');
-            _opponentPool = _CreatePool(seed, randoms, System.Array.ConvertAll(opps, (string o) => { return (Opponent)System.Enum.Parse(typeof(Opponent), o, true); }));
-            
-            _noveltyArchiveSize = XmlUtils.GetValueAsInt(xmlConfig, "NoveltyArchiveSize");
-            _noveltyEvaluationMode = GetValueAsEnum<NoveltyEvaluationMode>("NoveltyEvaluationMode");
-            _objectiveEvaluationMode = GetValueAsEnum<ObjectiveEvaluationMode>("ObjectiveEvaluationMode");
+            _opponentPool = CreatePool(seed, randoms, System.Array.ConvertAll(opps, (string o) => { return (Opponent)System.Enum.Parse(typeof(Opponent), o, true); }));
 
-            IPDGame.AllowRandomChoice = XmlUtils.GetValueAsBool(xmlConfig, "AllowRandomChoice");
+            _evaluationMode = GetValueAsEnum<EvaluationMode>("EvaluationMode");
+            _noveltyMetric = GetValueAsEnum<NoveltyMetric>("NoveltyMetric");
+            _noveltyK = XmlUtils.GetValueAsInt(xmlConfig, "NoveltyK");
+
+            _randomRobustCheck = XmlUtils.GetValueAsInt(xmlConfig, "RandomRobustCheck");
             _pastInputReach = XmlUtils.GetValueAsInt(xmlConfig, "PastInputReach");
 
             _description = XmlUtils.TryGetValueAsString(xmlConfig, "Description");
@@ -295,7 +299,7 @@ namespace SharpNeat.Domains.IPD
 
         #endregion
 
-        private IPDPlayer[] _CreatePool(int seed, int randoms, params Opponent[] opponents)
+        private IPDPlayer[] CreatePool(int seed, int randoms, params Opponent[] opponents)
         {
             Players.IPDPlayerFactory pf = new Players.IPDPlayerFactory(seed);
             var pool = new IPDPlayer[randoms + opponents.Length];
@@ -306,27 +310,30 @@ namespace SharpNeat.Domains.IPD
             return pool;
         }
 
-        public struct Info
+        public class Info
         {
             public int InputCount { get { return _exp.InputCount; } }
             public int OutputCount { get { return _exp.OutputCount; } }
-
-            public int NoveltyArchiveSize { get { return _exp._noveltyArchiveSize; } }
-            public NoveltyEvaluationMode NoveltyEvaluationMode { get { return _exp._noveltyEvaluationMode; } }
-            public ObjectiveEvaluationMode ObjectiveEvaluationMode { get { return _exp._objectiveEvaluationMode; } }
+            
+            public EvaluationMode EvaluationMode { get { return _exp._evaluationMode; } }
+            public NoveltyMetric NoveltyMetric { get { return _exp._noveltyMetric; } }
+            public int NoveltyK { get { return _exp._noveltyK; } }
 
             public IPDPlayer[] OpponentPool { get { return _exp._opponentPool; } }
             public IPDGame[,] OpponentPoolGames { get; private set; }
             public double[] OpponentScores { get; private set; }
             public int NumberOfGames { get { return _exp._numberOfGames; } }
+            public int RandomRobustCheck { get { return _exp._randomRobustCheck; } }
 
             public int PopulationSize { get { return _exp._populationSize; } }
             public int CurrentGeneration { get { return (int)_genGet(); } }
             public IBlackBox BestGenome { get { return _boxGet(); } }
+            public double BestFitness { get { return _fitGet(); } }
 
             private IPDExperiment _exp;
             private System.Func<uint> _genGet;
             private System.Func<IBlackBox> _boxGet;
+            private System.Func<double> _fitGet;
             private uint _current;
 
             public Info(IPDExperiment exp, NeatEvolutionAlgorithm<NeatGenome> ea, IGenomeDecoder<NeatGenome, IBlackBox> decoder)
@@ -334,9 +341,26 @@ namespace SharpNeat.Domains.IPD
                 _exp = exp;
                 _genGet = () => { return ea.CurrentGeneration; };
                 _boxGet = () => { return decoder.Decode(ea.CurrentChampGenome); };
+                _fitGet = () => { return ea.CurrentChampGenome.EvaluationInfo.Fitness; };
                 _current = _genGet();
 
-                var pool = _exp._opponentPool;
+                OpponentInfo();
+            }
+
+            public bool HasNewGenerationOccured()
+            {
+                uint g = _genGet();
+                if (_current != g)
+                {
+                    _current = g;
+                    return true;
+                }
+                return false;
+            }
+
+            private void OpponentInfo()
+            {
+                var pool = OpponentPool;
                 OpponentScores = new double[pool.Length];
                 OpponentPoolGames = new IPDGame[pool.Length, pool.Length];
                 for (int i = 0; i < pool.Length; i++)
@@ -355,17 +379,6 @@ namespace SharpNeat.Domains.IPD
                         }
                     }
                 }
-            }
-
-            public bool HasNewGenerationOccured()
-            {
-                uint g = _genGet();
-                if (_current != g)
-                {
-                    _current = g;
-                    return true;
-                }
-                return false;
             }
         }
     }

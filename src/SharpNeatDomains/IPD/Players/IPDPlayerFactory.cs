@@ -10,7 +10,9 @@ namespace SharpNeat.Domains.IPD.Players
 {
     class IPDPlayerFactory
     {
-        public static IPDPlayerGenerated Create(IPDExperiment.Opponent op)
+        public static bool AllowRandomChoice { get; set; }
+
+        public static IPDPlayer Create(IPDExperiment.Opponent op)
         {
             switch (op)
             {
@@ -27,6 +29,12 @@ namespace SharpNeat.Domains.IPD.Players
                     return CreateXTFT("STFT", IPDGame.Choices.D);
                 case IPDExperiment.Opponent.Grudger:
                     return CreateGrudger();
+                case IPDExperiment.Opponent.Pavlov:
+                    return CreatePavlov();
+                case IPDExperiment.Opponent.Adaptive:
+                    return new IPDPlayerAdaptive();
+                case IPDExperiment.Opponent.ZD:
+                    return new IPDPlayerZD();
             }
         }
 
@@ -65,6 +73,18 @@ namespace SharpNeat.Domains.IPD.Players
             return new IPDPlayerGenerated("Grudger", tree, IPDGame.Choices.C);
         }
 
+        private static IPDPlayerGenerated CreatePavlov()
+        {
+            DecisionTree tree = new DecisionTree(new Dictionary<int, Node>()
+            {
+                { 0, new PayoffConditionalNode(1, 2, 1, IPDGame.Past.T, IPDGame.Past.S) },
+                { 1, new AssignResultNode(new QFunction(IPDGame.Choices.D))},
+                { 2, new AssignResultNode(new QFunction(IPDGame.Choices.C))}
+            });
+
+            return new IPDPlayerGenerated("Pavlov", tree, IPDGame.Choices.C);
+        }
+
         private Random _r;
         private int _condId;
         private int _resultId;
@@ -72,9 +92,9 @@ namespace SharpNeat.Domains.IPD.Players
 
         private IPDGame.Past[] _past = new IPDGame.Past[4] { IPDGame.Past.T, IPDGame.Past.R, IPDGame.Past.P, IPDGame.Past.S };
 
-        public IPDPlayerFactory(int seed = 0)
+        public IPDPlayerFactory(int seed)
         {
-            _r = (seed <= 0) ? new System.Random() : new System.Random(seed);
+            _r = (seed == 0) ? new Random() : new Random(seed);
 
             Func<(int, int)> RR = () => { return (_resultId++, _resultId++); };
             Func<(int, int)> CC = () => { return (_condId++, _condId++); };

@@ -33,7 +33,7 @@ namespace SharpNeat.Domains.IPD
         public IPDGameTable(IGenomeDecoder<NeatGenome, IBlackBox> genomeDecoder, IPDExperiment.Info info)
         {
             InitializeComponent();
-            
+
             try
             {
                 _genomeDecoder = genomeDecoder;
@@ -53,6 +53,12 @@ namespace SharpNeat.Domains.IPD
             {
 
             }
+        }
+
+        private void IPDGameTable_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (e.KeyChar == 'g' || e.KeyChar == '\x1B')
+                ParentForm.Close();
         }
 
         public override Size WindowSize => new Size(535, 555);
@@ -127,7 +133,7 @@ namespace SharpNeat.Domains.IPD
 
             _rankings = new DataGridViewTextBoxColumn();
             _rankings.HeaderText = "Ranking";
-            _rankings.AutoSizeMode = DataGridViewAutoSizeColumnMode.ColumnHeader;
+            _rankings.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
             _rankings.SortMode = DataGridViewColumnSortMode.NotSortable;
             _table.Columns.Add(_rankings);
 
@@ -137,6 +143,9 @@ namespace SharpNeat.Domains.IPD
 
         private void UpdateTable()
         {
+            ParentForm.KeyPreview = true;
+            ParentForm.KeyPress += IPDGameTable_KeyPress;
+
             //Fill in table
             double[] totals = new double[_players.Length];
             for (int i = 0; i < _players.Length; i++)
@@ -173,7 +182,7 @@ namespace SharpNeat.Domains.IPD
                 _table.Rows[i].Cells[_rankings.DisplayIndex].Value = ranks[i] + ((r == 1.0d) ? " (Best)" : string.Empty);
                 _table.Rows[i].Cells[_rankings.DisplayIndex].ToolTipText = r.ToString("F3");
             }
-        }        
+        }
 
         private void SaveTable()
         {

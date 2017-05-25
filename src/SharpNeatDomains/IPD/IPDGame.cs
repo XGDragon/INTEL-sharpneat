@@ -12,11 +12,28 @@ namespace SharpNeat.Domains.IPD
         public enum Past { None = -1, T = 5, R = 3, P = 1, S = 0 };
 
         private static Random _r = new Random();
-        public static bool AllowRandomChoice { get; set; }
-        public static Choices RandomChoice() { return (AllowRandomChoice) ? ((_r.NextDouble() < 0.5) ? Choices.C : Choices.D) : Choices.C; }
+
+        public static Choices RandomChoice(double chanceForC = 0.5) { return (_r.NextDouble() < chanceForC) ? Choices.C : Choices.D; }
+
+        public static int PastToIndex(Past p)
+        {
+            switch (p)
+            {
+                default:
+                case Past.T:
+                    return 0;
+                case Past.R:
+                    return 1;
+                case Past.P:
+                    return 2;
+                case Past.S:
+                    return 3;
+            }
+        }
 
         public int T { get; private set; }
         public int Length { get; private set; }
+        public bool HasRandom { get; private set; }
 
         public IPDPlayer A { get { return _a.Player; } }
         public IPDPlayer B { get { return _b.Player; } }
@@ -29,6 +46,7 @@ namespace SharpNeat.Domains.IPD
             _a = new PlayerCard(a, numberOfGames);
             _b = new PlayerCard(b, numberOfGames);
             Length = numberOfGames;
+            HasRandom = false;
         }
 
         public void Run()
@@ -36,12 +54,25 @@ namespace SharpNeat.Domains.IPD
             A.Reset();
             B.Reset();
 
+            _a = new PlayerCard(_a);
+            _b = new PlayerCard(_b);
+            T = 0;
+
             while (T < Length)
             {
                 Choices a = A.Choice(this);
                 Choices b = B.Choice(this);
-                a = (a == Choices.R) ? RandomChoice() : a;
-                b = (b == Choices.R) ? RandomChoice() : b;
+
+                if (a == Choices.R)
+                {
+                    HasRandom = true;
+                    a = RandomChoice();
+                }
+                if (b == Choices.R)
+                {
+                    HasRandom = true;
+                    b = RandomChoice();
+                }
 
                 _a.AddPast(a, b);
                 _b.AddPast(b, a);
@@ -88,14 +119,32 @@ namespace SharpNeat.Domains.IPD
             return (ab == _a.Player) ? _a.Score : _b.Score;
         }
 
+        public double[] GetChoices(IPDPlayer ab)
+        {
+            if (ab != _a.Player && ab != _b.Player)
+                return new double[2];
+            return (ab == _a.Player) ? _a.ChoiceCounter : _b.ChoiceCounter;
+        }
+
+        public double[] GetPasts(IPDPlayer ab)
+        {
+            if (ab != _a.Player && ab != _b.Player)
+                return new double[4];
+            return (ab == _a.Player) ? _a.PastCounter : _b.PastCounter;
+        }
+
         private struct PlayerCard
         {
             public IPDPlayer Player { get; private set; }
             public double Score { get; private set; }
 
+            public double[] ChoiceCounter { get; private set; }
+            public double[] PastCounter { get; private set; }
+
+            public Past this[int time] { get { return _history[time]; } }
+
             private int _t;
             private Past[] _history;
-            public Past this[int time] { get { return _history[time]; } }
 
             public PlayerCard(IPDPlayer player, int numberofGames)
             {
@@ -103,6 +152,18 @@ namespace SharpNeat.Domains.IPD
                 _history = new Past[numberofGames];
                 Score = 0;
                 _t = 0;
+                ChoiceCounter = new double[2];
+                PastCounter = new double[4];
+            }
+
+            public PlayerCard(PlayerCard copy)
+            {
+                Player = copy.Player;
+                _history = new Past[copy._history.Length];
+                Score = 0;
+                _t = 0;
+                ChoiceCounter = new double[2];
+                PastCounter = new double[4];
             }
 
             public void AddPast(Choices myChoice, Choices opponentsChoice)
@@ -122,6 +183,9 @@ namespace SharpNeat.Domains.IPD
                         _history[_t] = Past.T;
                     else _history[_t] = Past.P;//D
                 }
+
+                ChoiceCounter[(int)myChoice]++;
+                PastCounter[PastToIndex(_history[_t])]++;
 
                 Score += (int)_history[_t];
                 _t++;

@@ -33,7 +33,7 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>none</DebugType>
+    <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
@@ -43,6 +43,7 @@
     </DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
     <LangVersion>7</LangVersion>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="CsvHelper, Version=2.0.0.0, Culture=neutral, PublicKeyToken=8c4959082be5c823, processorArchitecture=MSIL">
@@ -146,6 +147,8 @@
     <Compile Include="IPD\IPDGameTable.Designer.cs">
       <DependentUpon>IPDGameTable.cs</DependentUpon>
     </Compile>
+    <Compile Include="IPD\Players\IPDPlayerAdaptive.cs" />
+    <Compile Include="IPD\Players\IPDPlayerZD.cs" />
     <Compile Include="IPD\Players\Tree\QFunction.cs" />
     <Compile Include="IPD\IPDEvaluator.cs" />
     <Compile Include="IPD\IPDExperiment.cs" />
@@ -211,7 +214,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="DoublePoleBalancing\Antiwiggle_Explanation_Email.txt" />
-    <None Include="FodyWeavers.xml" />
     <Content Include="SharpNeatDomains.experiments.xml">
       <SubType>Designer</SubType>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
