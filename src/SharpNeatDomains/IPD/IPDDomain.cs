@@ -127,7 +127,7 @@ namespace SharpNeat.Domains.IPD
             g.YAxis.Title.Text = "Score";
 
             g.Y2Axis.IsVisible = true;
-            g.Y2Axis.Scale.Min = 0.5;
+            g.Y2Axis.Scale.Min = 0.0;
             g.Y2Axis.Scale.Max = 1.0;
 
             Controls.Add(_graphArchive);
@@ -175,18 +175,22 @@ namespace SharpNeat.Domains.IPD
             f.Symbol.Size = 20;
             f.Symbol.Fill = new Fill(Brushes.Green);
 
-            var @as = g.AddCurve("Avg. R-1 Score", averageWinningScore, Color.Green);
+            var @as = g.AddCurve("Avg. R-1 Score", averageWinningScore, Color.Green, SymbolType.Triangle);
+            @as.Line.Width = 3;
+            @as.Symbol.Size = 5;
+            @as.Symbol.Fill = new Fill(Brushes.Green);
 
             var ar = g.AddCurve("Average Rank", ii, averageRank, Color.Blue, SymbolType.None);
             ar.IsY2Axis = true;
+            ar.Line.Width = 3;
 
             var s = g.AddCurve("Score", ii, score, Color.Maroon, SymbolType.HDash);
             s.Line.IsVisible = false;
 
-            var r = g.AddCurve("Ranking", ii, rank, Color.Blue, SymbolType.Diamond);
+            var r = g.AddCurve("Ranking", ii, rank, Color.Coral, SymbolType.Diamond);
             r.IsY2Axis = true;
             r.Symbol.Fill = new Fill(Brushes.Coral);
-            r.Symbol.Size = 5;
+            r.Symbol.Size = 3;
             r.Line.IsVisible = false;
 
             _graphArchive.AxisChange();

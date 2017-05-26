@@ -58,6 +58,12 @@ namespace SharpNeat.Domains.IPD
                     primaryFitness = pi.Score; break;
             }
 
+            lock (_stopLock)
+            {
+                if (EvaluationCount == 50000)
+                    _stopConditionSatisfied = true;
+            }
+
             return new FitnessInfo(primaryFitness, pi.AuxiliaryFitnessInfo);
             //graph of _archive, sohuld be easy..
             //if (_info.EvaluationMode == IPDExperiment.EvaluationMode.Rank && pi.Rank == 1.0d && gen > 0)
@@ -87,7 +93,7 @@ namespace SharpNeat.Domains.IPD
 
             double score = scores[phenomeIndex];
             var ranks = scores.Rank();
-            double rank = ranks[phenomeIndex] / (double)ranks.Length;
+            double rank = (ranks[phenomeIndex] - 1) / ((double)ranks.Length - 1);
             if (rank == 1.0d)
             {
                 //Ties are not allowed
@@ -220,7 +226,7 @@ namespace SharpNeat.Domains.IPD
                             _pc[j] += pasts[j];
                     }
                 }
-            }
+            }            
 
             public double Distance(PhenomeInfo other)
             {
@@ -234,11 +240,19 @@ namespace SharpNeat.Domains.IPD
 
             public int CompareTo(PhenomeInfo other)
             {
-                if (this.Score > other.Score)
+                if (Rank > other.Rank)
                     return 1;
-                else if (this.Score < other.Score)
+                if (Rank < other.Rank)
                     return -1;
-                else return 0;
+                if (Rank == other.Rank)
+                {
+                    if (Score > other.Score)
+                        return 1;
+                    if (Score < other.Score)
+                        return -1;
+                    return 0;
+                }
+                return 0;
             }
         }        
     }
