@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Xml;
 using log4net;
@@ -29,7 +30,7 @@ namespace SharpNeat.Domains.IPD
             ZD_2,
             Pavlov,
             Adaptive,
-            PatternCCD
+            CCCD
         }
 
         public enum EvaluationMode
@@ -162,8 +163,9 @@ namespace SharpNeat.Domains.IPD
             _numberOfGames = XmlUtils.GetValueAsInt(xmlConfig, "IPDGames");
             int seed = XmlUtils.GetValueAsInt(xmlConfig, "RandomPlayerSeed");
             int randoms = XmlUtils.GetValueAsInt(xmlConfig, "RandomPlayerCount");
-            string[] opps = XmlUtils.GetValueAsString(xmlConfig, "StaticOpponents").Split(',');
-            _opponentPool = CreatePool(seed, randoms, System.Array.ConvertAll(opps, (string o) => { return (Opponent)System.Enum.Parse(typeof(Opponent), o, true); }));
+
+            string os = XmlUtils.TryGetValueAsString(xmlConfig, "StaticOpponents");
+            _opponentPool = CreatePool(seed, randoms, (os == null) ? new Opponent[0] : System.Array.ConvertAll(os.Split(','), (string o) => { return (Opponent)System.Enum.Parse(typeof(Opponent), o, true); }));
 
             _evaluationMode = GetValueAsEnum<EvaluationMode>("EvaluationMode");
             _noveltyMetric = GetValueAsEnum<NoveltyMetric>("NoveltyMetric");
@@ -300,7 +302,7 @@ namespace SharpNeat.Domains.IPD
         /// </summary>
         public AbstractDomainView CreateDomainView()
         {
-            return new IPDGameTable(CreateGenomeDecoder(), ref _info);
+            return new IPDDomain(CreateGenomeDecoder(), ref _info);
         }
 
         #endregion
@@ -336,6 +338,7 @@ namespace SharpNeat.Domains.IPD
             public System.Func<IBlackBox> BestNoveltyGenome { get; set; }
             public IBlackBox BestGenome { get { return _boxGet(); } }
             public double BestFitness { get { return _fitGet(); } }
+            public System.Func<List<IPDEvaluator.PhenomeInfo>> Archive { get; set; }
 
             private IPDExperiment _exp;
             private System.Func<uint> _genGet;
@@ -384,23 +387,6 @@ namespace SharpNeat.Domains.IPD
 
                             OpponentScores[i] += s.a;
                             OpponentScores[j] += s.b;
-                            //g.Run();
-                            //double[] s = new double[2] { g.GetScore(pool[i]), g.GetScore(pool[j]) };
-
-                            //if (g.HasRandom)
-                            //{
-                            //    for (int r = 1; r < RandomRobustCheck; r++)
-                            //    {
-                            //        g.Run();
-                            //        s[0] += games[i].GetScore(_info.OpponentPool[i]);
-                            //        s[1] += games[i].GetScore(p);
-                            //    }
-                            //    s[0] /= _info.RandomRobustCheck;
-                            //    s[1] /= _info.RandomRobustCheck;
-                            //}
-
-                            //OpponentScores[i] += g.GetScore(pool[i]);
-                            //OpponentScores[j] += g.GetScore(pool[j]);
                         }
                     }
                 }

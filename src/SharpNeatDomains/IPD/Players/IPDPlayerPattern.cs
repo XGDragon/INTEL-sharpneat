@@ -17,24 +17,28 @@ namespace SharpNeat.Domains.IPD.Players
         private int _iter;
 
         private bool _hasRandom;
+        private Object _iterLock = new Object();
 
         public IPDPlayerPattern(string name, params IPDGame.Choices[] pattern)
         {
             _name = name;
-
+            
             _pattern = pattern;
             _hasRandom = pattern.Contains(IPDGame.Choices.R);
         }
 
         public override IPDGame.Choices Choice(IPDGame game)
         {
-            if (game.T == 0)
-                game.HasRandom = _hasRandom;
+            lock (_iterLock)
+            {
+                if (game.T == 0)
+                    game.HasRandom = _hasRandom;
 
-            if (_iter > _pattern.Length)
-                _iter = 0;
+                if (_iter >= _pattern.Length)
+                    _iter = 0;
 
-            return _pattern[_iter++];
+                return _pattern[_iter++];
+            }
         }
 
         public override void Reset()

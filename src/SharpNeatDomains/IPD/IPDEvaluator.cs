@@ -20,7 +20,8 @@ namespace SharpNeat.Domains.IPD
         public bool StopConditionSatisfied { get { return _stopConditionSatisfied; } }
         
         private IPDExperiment.Info _info;
-        
+
+        private double _noveltyFitness = 1.0d;
         private Object _archiveLock = new Object();
         private List<PhenomeInfo> _archive = new List<PhenomeInfo>();
         private double _archiveThreshold;
@@ -30,7 +31,7 @@ namespace SharpNeat.Domains.IPD
         {
             _info = info;
             _info.BestNoveltyGenome = () => { var m = _archive.Max(); return m.Phenome; };
-
+            _info.Archive = () => { return _archive; };
             PhenomeInfo.Initialize(info);
         }
 
@@ -40,23 +41,33 @@ namespace SharpNeat.Domains.IPD
         public FitnessInfo Evaluate(IBlackBox phenome)
         {
             EvaluationCount++;
-            int gen = _info.CurrentGeneration;
+            //int gen = _info.CurrentGeneration;
 
-            var pi = EvaluateBehavior(phenome);
+            PhenomeInfo pi = EvaluateBehavior(phenome);
             double noveltyFitness = EvaluateNovelty(pi);
 
-            if (_info.EvaluationMode == IPDExperiment.EvaluationMode.Rank && pi.Rank == 1.0d && gen > 0)
+            double primaryFitness;
+            switch (_info.EvaluationMode)
             {
-                lock (_stopLock)
-                {
-                    _stopConditionSatisfied = true;
-                    return new FitnessInfo(_info.BestFitness * 10, pi.Score);
-                }
+                case IPDExperiment.EvaluationMode.Novelty:
+                    primaryFitness = noveltyFitness; break;
+                case IPDExperiment.EvaluationMode.Rank:
+                    primaryFitness = pi.Rank; break;
+                default:
+                case IPDExperiment.EvaluationMode.Score:
+                    primaryFitness = pi.Score; break;
             }
 
-            return (_info.EvaluationMode == IPDExperiment.EvaluationMode.Novelty)
-                ? new FitnessInfo(noveltyFitness, pi.Score)
-                : new FitnessInfo(pi.Fitness, pi.Rank);
+            return new FitnessInfo(primaryFitness, pi.AuxiliaryFitnessInfo);
+            //graph of _archive, sohuld be easy..
+            //if (_info.EvaluationMode == IPDExperiment.EvaluationMode.Rank && pi.Rank == 1.0d && gen > 0)
+            //{
+            //    lock (_stopLock)
+            //    {
+            //        _stopConditionSatisfied = true;
+            //        return new FitnessInfo(_info.BestFitness * 10, pi.Score);
+            //    }
+            //}
         }
 
         private PhenomeInfo EvaluateBehavior(IBlackBox phenome)
@@ -72,23 +83,6 @@ namespace SharpNeat.Domains.IPD
                 var s = games[i].Evaluate(_info.RandomRobustCheck);
                 scores[i] += s.a + _info.OpponentScores[i];
                 scores[phenomeIndex] += s.b;
-                //games[i].Run();
-                //double[] s = new double[2] { games[i].GetScore(_info.OpponentPool[i]), games[i].GetScore(p) };
-
-                //if (games[i].HasRandom)
-                //{
-                //    for (int r = 1; r < _info.RandomRobustCheck; r++)
-                //    {
-                //        games[i].Run();
-                //        s[0] += games[i].GetScore(_info.OpponentPool[i]);
-                //        s[1] += games[i].GetScore(p);
-                //    }
-                //    s[0] /= _info.RandomRobustCheck;
-                //    s[1] /= _info.RandomRobustCheck;
-                //}
-
-                //scores[i] += s[0] + _info.OpponentScores[i];
-                //scores[phenomeIndex] += s[1];
             }
 
             double score = scores[phenomeIndex];
@@ -99,7 +93,7 @@ namespace SharpNeat.Domains.IPD
                 //Ties are not allowed
                 for (int i = 0; i < scores.Length; i++)
                     if (scores[i] == scores[phenomeIndex] && i != phenomeIndex)
-                        rank -= 0.01d;
+                        rank -= 0.05d;
             }
 
             return new PhenomeInfo(phenome, rank, score, games);
@@ -107,8 +101,8 @@ namespace SharpNeat.Domains.IPD
 
         private double EvaluateNovelty(PhenomeInfo info)
         {
-            if (_info.EvaluationMode != IPDExperiment.EvaluationMode.Novelty)
-                return 0;
+            //if (_info.EvaluationMode != IPDExperiment.EvaluationMode.Novelty)
+            //    return 0;
 
             int ii = 0;
             double CalculateNovelty(PhenomeInfo pi)
@@ -128,6 +122,7 @@ namespace SharpNeat.Domains.IPD
 
             lock (_archiveLock)
             {
+                info.ID = _archive.Count;
                 if (_archive.Count <= _info.NoveltyK)
                 {
                     _archive.Add(info);
@@ -144,16 +139,17 @@ namespace SharpNeat.Domains.IPD
                     {
                         //not a novel phenome
                         _archiveThresholdFactor -= 0.002;
+                        return (novelty / threshold) * _noveltyFitness;
                     }
                     else
                     {
                         //novel phenome
                         _archiveThresholdFactor += 0.05;
                         _archive.Add(info);
+                        return ++_noveltyFitness;
                         //if (_archive.Count > 100)
                         //    _archive.RemoveAt(0);
                     }
-                    return novelty;
                 }
             }
         }
@@ -189,9 +185,12 @@ namespace SharpNeat.Domains.IPD
             public double Rank { get; private set; }
             public double Score { get; private set; }
             public IPDGame[] Games { get; private set; }
-            public double Fitness { get { return (_evaluationMode == IPDExperiment.EvaluationMode.Rank) ? Rank : Score; } }
+            public AuxFitnessInfo[] AuxiliaryFitnessInfo { get { _aux[0]._value = Score; _aux[1]._value = Rank; return _aux; } }
+
+            public long ID { get; set; }
 
             private double[] _pc;
+            private AuxFitnessInfo[] _aux;
 
             public PhenomeInfo(IBlackBox phenome, double rank, double score, IPDGame[] games)
             {
@@ -199,6 +198,7 @@ namespace SharpNeat.Domains.IPD
                 Rank = rank;
                 Score = score;
                 Games = games;
+                _aux = new AuxFitnessInfo[2] { new AuxFitnessInfo("Score", 0), new AuxFitnessInfo("Rank", 0) };
 
                 if (_metric == IPDExperiment.NoveltyMetric.Choice)
                 {
@@ -229,7 +229,7 @@ namespace SharpNeat.Domains.IPD
 
             public override string ToString()
             {
-                return "Score: " + Score.ToString();
+                return ID + "; Score: " + Score.ToString() + ", Rank: " + Rank.ToString();
             }
 
             public int CompareTo(PhenomeInfo other)

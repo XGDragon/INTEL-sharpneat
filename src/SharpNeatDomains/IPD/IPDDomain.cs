@@ -1,36 +1,42 @@
 ﻿using System;
 using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
 using System.Windows.Forms;
+using System.Collections.Generic;
 using SharpNeat.Core;
-using SharpNeat.Domains.BoxesVisualDiscrimination;
 using SharpNeat.Genomes.Neat;
 using SharpNeat.Phenomes;
-using System.Collections.Generic;
-using System.Threading;
-using System.Linq;
-using CsvHelper;
 using System.IO;
 using System.Text;
+using ZedGraph;
 
 namespace SharpNeat.Domains.IPD
 {
-    partial class IPDGameTable : AbstractDomainView
+    partial class IPDDomain : AbstractDomainView
     {
+        public override Size WindowSize => new Size(_tableSize.Width + _graphSize.Width + 50, 90 + Math.Max(_tableSize.Height, _graphSize.Height));
+
         private IGenomeDecoder<NeatGenome, IBlackBox> _genomeDecoder;
-        private IPDExperiment.Info _info;
-        
+        private IPDExperiment.Info _info;        
         private IPDPlayer[] _players;
         private IPDGame[,] _games;
-        
+
+        private System.Windows.Forms.Label _label;
+        private Size _labelSize = new Size(1400, 30);
+        private Point _labelLocation = new Point(10, 10);
+
         private DataGridView _table;
+        private Size _tableSize = new Size(700, 700);
+        private Point _tableLocation = new Point(10, 40);
         private ToolStripMenuItem _history;
         private ToolStripMenuItem _save;
         private DataGridViewColumn _cumulative;
         private DataGridViewColumn _rankings;
 
-        public IPDGameTable(IGenomeDecoder<NeatGenome, IBlackBox> genomeDecoder, ref IPDExperiment.Info info)
+        private ZedGraphControl _graphArchive;
+        private Size _graphSize = new Size(700, 700);
+        private Point _graphLocation = new Point(720, 40);
+
+        public IPDDomain(IGenomeDecoder<NeatGenome, IBlackBox> genomeDecoder, ref IPDExperiment.Info info)
         {
             InitializeComponent();
 
@@ -47,7 +53,12 @@ namespace SharpNeat.Domains.IPD
                     for (int j = 1; j < _players.Length; j++)
                         _games[i, j] = info.OpponentPoolGames[i - 1, j - 1];
 
+
+                SuspendLayout();
                 CreateTable();
+                CreateArchiveGraph();
+                CreateInfoLabel();
+                ResumeLayout();
             }
             catch
             {
@@ -60,8 +71,6 @@ namespace SharpNeat.Domains.IPD
             if (e.KeyChar == 'g' || e.KeyChar == '\x1B')
                 ParentForm.Close();
         }
-
-        public override Size WindowSize => new Size(535, 555);
 
         public override void RefreshView(object genome)
         {
@@ -78,24 +87,118 @@ namespace SharpNeat.Domains.IPD
                 g.Run();
                 _games[0, i] = g;
                 _games[i, 0] = g;
-            }
-            
+            }            
 
             UpdateTable();
+            UpdateArchiveGraph();
         }
 
-        private IPDGame GetGameFromCell(DataGridViewCell cell)
+        private void CreateInfoLabel()
         {
-            return _games[cell.ColumnIndex, cell.RowIndex];
+            _label = new System.Windows.Forms.Label();
+            _label.Size = _labelSize;
+            _label.Location = _labelLocation;
+            _label.Font = new Font(_label.Font.FontFamily, 12);
+
+            _label.Text = "Generation "
+                + _info.CurrentGeneration
+                + ", <"
+                + _info.EvaluationMode
+                + "> Evaluation Mode, <"
+                + _info.NoveltyMetric 
+                + "> Novelty Metric with KNN-"
+                + _info.NoveltyK
+                + ", can look back t-"
+                + _info.InputCount / 2
+                + " steps in history";
+            Controls.Add(_label);
+        }
+
+        private void CreateArchiveGraph()
+        {
+            _graphArchive = new ZedGraphControl();
+            _graphArchive.Location = _graphLocation;
+            _graphArchive.Size = _graphSize;
+            _graphArchive.IsShowPointValues = true;
+
+            GraphPane g = _graphArchive.GraphPane;
+            g.Title.Text = "Novelty Archive Visualization";
+            g.XAxis.Title.Text = "Index (ordered by when items were added)";
+            g.YAxis.Title.Text = "Score";
+
+            g.Y2Axis.IsVisible = true;
+            g.Y2Axis.Scale.Min = 0.5;
+            g.Y2Axis.Scale.Max = 1.0;
+
+            Controls.Add(_graphArchive);
+        }
+
+        private void UpdateArchiveGraph()
+        {
+            GraphPane g = _graphArchive.GraphPane;
+            g.CurveList.Clear();
+
+            var archive = _info.Archive();
+            archive.Sort((a, b) => a.ID.CompareTo(b.ID));
+
+            double[] ii = new double[archive.Count];
+            double[] score = new double[archive.Count];
+            double[] rank = new double[archive.Count];
+            double[] averageRank = new double[archive.Count];
+            PointPairList averageWinningScore = new PointPairList();
+
+            double averageRankCounter = 0;
+            double averageWinningScoreCounter = 0;
+            int first = -1;
+            for (int i = 0; i < ii.Length; i++)
+            {
+                ii[i] = i;
+                score[i] = archive[i].Score;
+                rank[i] = archive[i].Rank;
+
+                averageRankCounter += rank[i];
+                averageRank[i] = averageRankCounter / (i + 1);
+
+                if (rank[i] == 1.0)
+                {
+                    if (first == -1)
+                        first = i;
+
+                    averageWinningScoreCounter += score[i]; //average score, only counting those with rank 1
+                    PointPair pp = new PointPair(i, averageWinningScoreCounter / (averageWinningScore.Count + 1));
+                    averageWinningScore.Add(new PointPair(i, averageWinningScoreCounter / (averageWinningScore.Count + 1)));
+                }
+            }
+
+            var f = g.AddCurve("First hit", new PointPairList() { new PointPair(first, 1.0d) }, Color.White, SymbolType.Triangle);
+            f.IsY2Axis = true;
+            f.Symbol.Size = 20;
+            f.Symbol.Fill = new Fill(Brushes.Green);
+
+            var @as = g.AddCurve("Avg. R-1 Score", averageWinningScore, Color.Green);
+
+            var ar = g.AddCurve("Average Rank", ii, averageRank, Color.Blue, SymbolType.None);
+            ar.IsY2Axis = true;
+
+            var s = g.AddCurve("Score", ii, score, Color.Maroon, SymbolType.HDash);
+            s.Line.IsVisible = false;
+
+            var r = g.AddCurve("Ranking", ii, rank, Color.Blue, SymbolType.Diamond);
+            r.IsY2Axis = true;
+            r.Symbol.Fill = new Fill(Brushes.Coral);
+            r.Symbol.Size = 5;
+            r.Line.IsVisible = false;
+
+            _graphArchive.AxisChange();
         }
         
         private void CreateTable()
         {
-            SuspendLayout();
-
+            IPDGame GetGameFromCell(DataGridViewCell cell) { return _games[cell.ColumnIndex, cell.RowIndex]; }
+            
             _table = new DataGridView();
-            _table.Location = new Point(10, 10);
-            _table.Size = new Size(500, 500);
+            _table.Location = _tableLocation;
+            _table.Size = _tableSize;
             _table.AllowUserToAddRows = false;
             _table.MultiSelect = false;
             _table.SelectionMode = DataGridViewSelectionMode.CellSelect;
@@ -141,7 +244,6 @@ namespace SharpNeat.Domains.IPD
             _table.Columns.Add(_rankings);
 
             Controls.Add(_table);
-            ResumeLayout(false);
         }
 
         private void UpdateTable()

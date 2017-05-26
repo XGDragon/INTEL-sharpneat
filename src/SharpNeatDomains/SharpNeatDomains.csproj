@@ -141,11 +141,11 @@
     <Compile Include="FunctionRegression\ParameterSamplingInfo.cs" />
     <Compile Include="FunctionRegression\FnRegressionExperiment.cs" />
     <Compile Include="INeatExperiment.cs" />
-    <Compile Include="IPD\IPDGameTable.cs">
+    <Compile Include="IPD\IPDDomain.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="IPD\IPDGameTable.Designer.cs">
-      <DependentUpon>IPDGameTable.cs</DependentUpon>
+    <Compile Include="IPD\IPDDomain.Designer.cs">
+      <DependentUpon>IPDDomain.cs</DependentUpon>
     </Compile>
     <Compile Include="IPD\Players\IPDPlayerAdaptive.cs" />
     <Compile Include="IPD\Players\IPDPlayerPattern.cs" />
