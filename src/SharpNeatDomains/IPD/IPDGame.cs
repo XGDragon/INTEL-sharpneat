@@ -9,12 +9,7 @@ namespace SharpNeat.Domains.IPD
     class IPDGame
     {
         public enum Choices { C, D, R };
-        public enum Past {
-            None = -1,
-            T = 5,
-            R = 3,
-            P = 1,
-            S = 0 };
+        public enum Past { None, T, R, P, S };
 
         private static Random _r = new Random();
 
@@ -33,6 +28,22 @@ namespace SharpNeat.Domains.IPD
                     return 2;
                 case Past.S:
                     return 3;
+            }
+        }
+        
+        public static int PastToScore(Past p)
+        {
+            switch (p)
+            {
+                default:
+                case Past.T:
+                    return 5;
+                case Past.R:
+                    return 3;
+                case Past.P:
+                    return 1;
+                case Past.S:
+                    return 0;
             }
         }
 
@@ -56,23 +67,6 @@ namespace SharpNeat.Domains.IPD
 
         public (double a, double b) Evaluate(int robustness)
         {
-            //games[i].Run();
-            //double[] s = new double[2] { games[i].GetScore(_info.OpponentPool[i]), games[i].GetScore(p) };
-
-            //if (games[i].HasRandom)
-            //{
-            //    for (int r = 1; r < _info.RandomRobustCheck; r++)
-            //    {
-            //        games[i].Run();
-            //        s[0] += games[i].GetScore(_info.OpponentPool[i]);
-            //        s[1] += games[i].GetScore(p);
-            //    }
-            //    s[0] /= _info.RandomRobustCheck;
-            //    s[1] /= _info.RandomRobustCheck;
-            //}
-
-            //scores[i] += s[0] + _info.OpponentScores[i];
-            //scores[phenomeIndex] += s[1];
             Run();
             double[] s = new double[2] { GetScore(A), GetScore(B) };
 
@@ -229,7 +223,7 @@ namespace SharpNeat.Domains.IPD
                 ChoiceCounter[(int)myChoice]++;
                 PastCounter[PastToIndex(_history[_t])]++;
 
-                Score += (int)_history[_t];
+                Score += PastToScore(_history[_t]);
                 _t++;
             }
         }

@@ -15,11 +15,11 @@
       <Description>
         TBD.
       </Description>
-      <IPDGames>100</IPDGames>
+      <IPDGames>300</IPDGames>
       <RandomPlayerSeed>9865</RandomPlayerSeed>
       <RandomPlayerCount>0</RandomPlayerCount>
       <RandomRobustCheck>100</RandomRobustCheck>
-      <StaticOpponents>DC,CD</StaticOpponents>
+      <StaticOpponents>ZD_2,ZD_2</StaticOpponents>
       <!--
             AllC,
             AllD,
@@ -45,7 +45,7 @@
           Rank,   (objective)
           Novelty (novelty)
         -->
-      <NoveltyMetric>Score</NoveltyMetric>
+      <NoveltyMetric>Choice</NoveltyMetric>
             <!--
           Score,
           Past,

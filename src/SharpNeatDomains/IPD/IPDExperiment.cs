@@ -310,11 +310,6 @@ namespace SharpNeat.Domains.IPD
             return new IPDDomain(CreateGenomeDecoder(), ref _info);
         }
 
-        public AbstractPageView CreatePageView()
-        {
-            return new IPDPage();
-        }
-
         #endregion
 
         private IPDPlayer[] CreatePool(int seed, int randoms, params Opponent[] opponents)
