@@ -33,7 +33,9 @@ namespace SharpNeat.Domains.IPD
             CCCD,
             CCD,
             DDDC,
-            DDC
+            DDC,
+            CD,
+            DC
         }
 
         public enum EvaluationMode
@@ -306,6 +308,11 @@ namespace SharpNeat.Domains.IPD
         public AbstractDomainView CreateDomainView()
         {
             return new IPDDomain(CreateGenomeDecoder(), ref _info);
+        }
+
+        public AbstractPageView CreatePageView()
+        {
+            return new IPDPage();
         }
 
         #endregion

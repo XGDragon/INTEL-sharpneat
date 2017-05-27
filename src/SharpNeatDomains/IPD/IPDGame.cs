@@ -9,7 +9,12 @@ namespace SharpNeat.Domains.IPD
     class IPDGame
     {
         public enum Choices { C, D, R };
-        public enum Past { None = -1, T = 5, R = 3, P = 1, S = 0 };
+        public enum Past {
+            None = -1,
+            T = 5,
+            R = 3,
+            P = 1,
+            S = 0 };
 
         private static Random _r = new Random();
 

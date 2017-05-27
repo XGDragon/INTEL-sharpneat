@@ -19,7 +19,7 @@
       <RandomPlayerSeed>9865</RandomPlayerSeed>
       <RandomPlayerCount>0</RandomPlayerCount>
       <RandomRobustCheck>100</RandomRobustCheck>
-      <StaticOpponents>CCD,DDC</StaticOpponents>
+      <StaticOpponents>DC,CD</StaticOpponents>
       <!--
             AllC,
             AllD,
@@ -35,9 +35,11 @@
             CCCD,
             CCD,
             DDDC,
-            DDC
+            DDC,
+            CD,
+            DC
         -->
-      <EvaluationMode>Novelty</EvaluationMode>
+      <EvaluationMode>Score</EvaluationMode>
       <!--
           Score,  (objective)
           Rank,   (objective)
