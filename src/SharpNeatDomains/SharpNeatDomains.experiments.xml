@@ -19,20 +19,23 @@
       <RandomPlayerSeed>9865</RandomPlayerSeed>
       <RandomPlayerCount>0</RandomPlayerCount>
       <RandomRobustCheck>100</RandomRobustCheck>
-      <StaticOpponents>GTFT</StaticOpponents>
+      <StaticOpponents>CCD,DDC</StaticOpponents>
       <!--
-          AllC,   
-          AllD,
-          AllR,
-          TFT,
-          STFT,
-          Grudger,
-          GTFT,
-          ZDGTFT_2,
-          ZD_2,
-          Pavlov,
-          Adaptive,
-          CCCD
+            AllC,
+            AllD,
+            AllR,
+            TFT,
+            STFT,
+            Grudger,
+            GTFT,
+            ZDGTFT_2,
+            ZD_2,
+            Pavlov,
+            Adaptive,
+            CCCD,
+            CCD,
+            DDDC,
+            DDC
         -->
       <EvaluationMode>Novelty</EvaluationMode>
       <!--

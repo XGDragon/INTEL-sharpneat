@@ -60,7 +60,7 @@ namespace SharpNeat.Domains.IPD
 
             lock (_stopLock)
             {
-                if (EvaluationCount == 50000)
+                if (EvaluationCount == 500000)
                     _stopConditionSatisfied = true;
             }
 

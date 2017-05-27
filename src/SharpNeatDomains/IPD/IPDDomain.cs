@@ -146,9 +146,11 @@ namespace SharpNeat.Domains.IPD
             double[] rank = new double[archive.Count];
             double[] averageRank = new double[archive.Count];
             PointPairList averageWinningScore = new PointPairList();
+            PointPairList topScore = new PointPairList();
 
             double averageRankCounter = 0;
             double averageWinningScoreCounter = 0;
+            double topScoreCounter = -1;
             int first = -1;
             for (int i = 0; i < ii.Length; i++)
             {
@@ -158,6 +160,8 @@ namespace SharpNeat.Domains.IPD
 
                 averageRankCounter += rank[i];
                 averageRank[i] = averageRankCounter / (i + 1);
+                topScoreCounter = (score[i] > topScoreCounter) ? score[i] : topScoreCounter;
+                topScore.Add(new PointPair(i, topScoreCounter));
 
                 if (rank[i] == 1.0)
                 {
@@ -165,7 +169,6 @@ namespace SharpNeat.Domains.IPD
                         first = i;
 
                     averageWinningScoreCounter += score[i]; //average score, only counting those with rank 1
-                    PointPair pp = new PointPair(i, averageWinningScoreCounter / (averageWinningScore.Count + 1));
                     averageWinningScore.Add(new PointPair(i, averageWinningScoreCounter / (averageWinningScore.Count + 1)));
                 }
             }
@@ -183,6 +186,9 @@ namespace SharpNeat.Domains.IPD
             var ar = g.AddCurve("Average Rank", ii, averageRank, Color.Blue, SymbolType.None);
             ar.IsY2Axis = true;
             ar.Line.Width = 3;
+
+            var t = g.AddCurve("Top Score", topScore, Color.Purple, SymbolType.Square);
+            t.Line.Width = 3;
 
             var s = g.AddCurve("Score", ii, score, Color.Maroon, SymbolType.HDash);
             s.Line.IsVisible = false;

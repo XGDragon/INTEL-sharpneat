@@ -19,29 +19,32 @@ namespace SharpNeat.Domains.IPD.Players
             {
                 case IPDExperiment.Opponent.AllR:
                 default:
-                    return new IPDPlayerZD("AllR", 0.5, 0.5, 0.5, 0.5, IPDGame.Choices.R);
+                    return new IPDPlayerZD(o, 0.5, 0.5, 0.5, 0.5, IPDGame.Choices.R);
                 case IPDExperiment.Opponent.AllC:
-                    return new IPDPlayerZD("AllC", 1, 1, 1, 1, IPDGame.Choices.C);
+                    return new IPDPlayerZD(o, 1, 1, 1, 1, IPDGame.Choices.C);
                 case IPDExperiment.Opponent.AllD:
-                    return new IPDPlayerZD("AllD", 0, 0, 0, 0, IPDGame.Choices.D);
+                    return new IPDPlayerZD(o, 0, 0, 0, 0, IPDGame.Choices.D);
                 case IPDExperiment.Opponent.TFT:
-                    return new IPDPlayerZD("TFT", 1, 0, 1, 0, IPDGame.Choices.C);
+                    return new IPDPlayerZD(o, 1, 0, 1, 0, IPDGame.Choices.C);
                 case IPDExperiment.Opponent.STFT:
-                    return new IPDPlayerZD("STFT", 1, 0, 1, 0, IPDGame.Choices.D);
+                    return new IPDPlayerZD(o, 1, 0, 1, 0, IPDGame.Choices.D);
                 case IPDExperiment.Opponent.GTFT:
-                    return new IPDPlayerZD("GTFT", 0.5, 0, 0.5, 0, IPDGame.Choices.C);
+                    return new IPDPlayerZD(o, 0.5, 0, 0.5, 0, IPDGame.Choices.C);
                 case IPDExperiment.Opponent.Grudger:
                     return CreateGrudger();
                 case IPDExperiment.Opponent.Pavlov:
-                    return new IPDPlayerZD("Pavlov", 1, 0, 0, 1, IPDGame.Choices.C);
+                    return new IPDPlayerZD(o, 1, 0, 0, 1, IPDGame.Choices.C);
                 case IPDExperiment.Opponent.Adaptive:
                     return new IPDPlayerAdaptive();
                 case IPDExperiment.Opponent.ZDGTFT_2:
-                    return new IPDPlayerZD("ZDGTFT-2", 1, 1.0/8, 1, 1.0/4, IPDGame.Choices.C);
+                    return new IPDPlayerZD(o, 1, 1.0/8, 1, 1.0/4, IPDGame.Choices.C);
                 case IPDExperiment.Opponent.ZD_2:
-                    return new IPDPlayerZD("ZD-2", 8.0/9, 1.0/2, 1.0/3, 0, IPDGame.Choices.C);
+                    return new IPDPlayerZD(o, 8.0/9, 1.0/2, 1.0/3, 0, IPDGame.Choices.C);
                 case IPDExperiment.Opponent.CCCD:
-                    return new IPDPlayerPattern("CCCD", new IPDGame.Choices[] { IPDGame.Choices.C, IPDGame.Choices.C, IPDGame.Choices.C, IPDGame.Choices.D });
+                case IPDExperiment.Opponent.CCD:
+                case IPDExperiment.Opponent.DDDC:
+                case IPDExperiment.Opponent.DDC:
+                    return new IPDPlayerPattern(o);
             }
         }
 

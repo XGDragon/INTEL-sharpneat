@@ -30,7 +30,10 @@ namespace SharpNeat.Domains.IPD
             ZD_2,
             Pavlov,
             Adaptive,
-            CCCD
+            CCCD,
+            CCD,
+            DDDC,
+            DDC
         }
 
         public enum EvaluationMode
