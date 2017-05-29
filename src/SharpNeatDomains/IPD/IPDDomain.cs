@@ -13,20 +13,20 @@ namespace SharpNeat.Domains.IPD
 {
     partial class IPDDomain : AbstractDomainView
     {
-        public override Size WindowSize => new Size(_tableSize.Width + _graphSize.Width + 50, 90 + Math.Max(_tableSize.Height, _graphSize.Height));
+        public override Size WindowSize => new Size(_tableSize.Width + _graphSize.Width + 50, 120 + Math.Max(_tableSize.Height, _graphSize.Height));
 
         private IGenomeDecoder<NeatGenome, IBlackBox> _genomeDecoder;
         private IPDExperiment.Info _info;        
         private IPDPlayer[] _players;
         private IPDGame[,] _games;
-
-        private System.Windows.Forms.Label _label;
+        
         private Size _labelSize = new Size(1400, 30);
-        private Point _labelLocation = new Point(10, 10);
+        private Point _label1Location = new Point(10, 10);
+        private Point _label2Location = new Point(10, 40);
 
         private DataGridView _table;
         private Size _tableSize = new Size(700, 700);
-        private Point _tableLocation = new Point(10, 40);
+        private Point _tableLocation = new Point(10, 70);
         private ToolStripMenuItem _history;
         private ToolStripMenuItem _save;
         private DataGridViewColumn _cumulative;
@@ -34,7 +34,7 @@ namespace SharpNeat.Domains.IPD
 
         private ZedGraphControl _graphArchive;
         private Size _graphSize = new Size(700, 700);
-        private Point _graphLocation = new Point(720, 40);
+        private Point _graphLocation = new Point(720, 70);
 
         public IPDDomain(IGenomeDecoder<NeatGenome, IBlackBox> genomeDecoder, ref IPDExperiment.Info info)
         {
@@ -95,23 +95,50 @@ namespace SharpNeat.Domains.IPD
 
         private void CreateInfoLabel()
         {
-            _label = new System.Windows.Forms.Label();
-            _label.Size = _labelSize;
-            _label.Location = _labelLocation;
-            _label.Font = new Font(_label.Font.FontFamily, 12);
+            var label1 = new System.Windows.Forms.Label();
+            label1.Size = _labelSize;
+            label1.Location = _label1Location;
+            label1.Font = new Font(label1.Font.FontFamily, 12);
 
-            _label.Text = "Generation "
+            label1.Text =
+                  "Generation "
                 + _info.CurrentGeneration
-                + ", <"
-                + _info.EvaluationMode
-                + "> Evaluation Mode, <"
-                + _info.NoveltyMetric 
-                + "> Novelty Metric with KNN-"
-                + _info.NoveltyK
-                + ", can look back t-"
-                + _info.InputCount / 2
-                + " steps in history";
-            Controls.Add(_label);
+                + "; "
+                + _info.Evaluations()
+                + " evaluations; "
+                + _info.PopulationSize
+                + " genomes; "
+                + _info.NumberOfGames
+                + " iterated games per opponent";
+
+            var label2 = new System.Windows.Forms.Label();
+            label2.Size = _labelSize;
+            label2.Location = _label2Location;
+            label2.Font = new Font(label2.Font.FontFamily, 10);
+
+            if (_info.EvaluationMode == IPDExperiment.EvaluationMode.Novelty)
+            {
+                label2.Text =
+                      "("
+                    + _info.EvaluationMode
+                    + ") Evaluation Mode, ("
+                    + _info.NoveltyMetric
+                    + ") Novelty Metric with KNN-"
+                    + _info.NoveltyK
+                    + ", memory-"
+                    + _info.InputCount / 2;
+            }
+            else
+            {
+                label2.Text =
+                      "("
+                    + _info.EvaluationMode
+                    + ") Evaluation Mode, memory-"
+                    + _info.InputCount / 2;
+            }
+
+            Controls.Add(label1);
+            Controls.Add(label2);
         }
 
         private void CreateArchiveGraph()
@@ -188,7 +215,7 @@ namespace SharpNeat.Domains.IPD
             ar.Line.Width = 3;
 
             var t = g.AddCurve("Top Score", topScore, Color.Purple, SymbolType.Square);
-            t.Line.Width = 3;
+            t.Line.Width = 2;
 
             var s = g.AddCurve("Score", ii, score, Color.Maroon, SymbolType.HDash);
             s.Line.IsVisible = false;

@@ -32,6 +32,7 @@ namespace SharpNeat.Domains.IPD
             _info = info;
             _info.BestNoveltyGenome = () => { var m = _archive.Max(); return m.Phenome; };
             _info.Archive = () => { return _archive; };
+            _info.Evaluations = () => { return EvaluationCount; };
             PhenomeInfo.Initialize(info);
         }
 
@@ -60,12 +61,12 @@ namespace SharpNeat.Domains.IPD
 
             lock (_stopLock)
             {
-                if (EvaluationCount == 500000)
+                if (_info.CurrentGeneration == 500)
                     _stopConditionSatisfied = true;
             }
 
             return new FitnessInfo(primaryFitness, pi.AuxiliaryFitnessInfo);
-            //graph of _archive, sohuld be easy..
+            
             //if (_info.EvaluationMode == IPDExperiment.EvaluationMode.Rank && pi.Rank == 1.0d && gen > 0)
             //{
             //    lock (_stopLock)

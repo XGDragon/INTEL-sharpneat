@@ -23,7 +23,6 @@ namespace SharpNeat.Domains.IPD.Players
 
         public override IPDGame.Choices Choice(IPDGame game)
         {
-            IPDGame.Choices r;
             IPDGame.Choices pr;
             int prt = game.T - 1;
 
