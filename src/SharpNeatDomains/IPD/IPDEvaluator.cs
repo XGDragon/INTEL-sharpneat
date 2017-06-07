@@ -42,7 +42,6 @@ namespace SharpNeat.Domains.IPD
         public FitnessInfo Evaluate(IBlackBox phenome)
         {
             EvaluationCount++;
-            //int gen = _info.CurrentGeneration;
 
             PhenomeInfo pi = EvaluateBehavior(phenome);
             double noveltyFitness = EvaluateNovelty(pi);
@@ -61,20 +60,15 @@ namespace SharpNeat.Domains.IPD
 
             lock (_stopLock)
             {
-                if (_info.CurrentGeneration == 500)
+                if (_info.EvaluationLimit > 0 && EvaluationCount > _info.EvaluationLimit)
+                {
+                    System.Media.SoundPlayer alarm = new System.Media.SoundPlayer(SharpNeat.Domains.Properties.Resources.Alarm02);
+                    alarm.Play();
                     _stopConditionSatisfied = true;
+                }
             }
 
             return new FitnessInfo(primaryFitness, pi.AuxiliaryFitnessInfo);
-            
-            //if (_info.EvaluationMode == IPDExperiment.EvaluationMode.Rank && pi.Rank == 1.0d && gen > 0)
-            //{
-            //    lock (_stopLock)
-            //    {
-            //        _stopConditionSatisfied = true;
-            //        return new FitnessInfo(_info.BestFitness * 10, pi.Score);
-            //    }
-            //}
         }
 
         private PhenomeInfo EvaluateBehavior(IBlackBox phenome)

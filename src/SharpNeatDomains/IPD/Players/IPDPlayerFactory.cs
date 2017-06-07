@@ -105,7 +105,7 @@ namespace SharpNeat.Domains.IPD.Players
             for (int i = condNodes.Length; i < _resultId; i++)
                 treeDict.Add(i, CreateResultNode());
 
-            string name = _factoryRandom.GenerateRandomFirstAndLastName();
+            string name = "Generated" + _factoryRandom.GenerateRandomFirstAndLastName();
             IPDGame.Choices[] c = new IPDGame.Choices[RandomAmount()];
             for (int i = 0; i < c.Length; i++)
                 c[i] = RandomChoice();

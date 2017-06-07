@@ -8,6 +8,7 @@ using SharpNeat.Phenomes;
 using System.IO;
 using System.Text;
 using ZedGraph;
+using System.Diagnostics;
 
 namespace SharpNeat.Domains.IPD
 {
@@ -19,14 +20,14 @@ namespace SharpNeat.Domains.IPD
         private IPDExperiment.Info _info;        
         private IPDPlayer[] _players;
         private IPDGame[,] _games;
-
-        private System.Windows.Forms.Label _label;
-        private Size _labelSize = new Size(1200, 30);
-        private Point _labelLocation = new Point(10, 10);
+        
+        private Size _labelSize = new Size(990, 30);
+        private Point _labelLocation1 = new Point(10, 10);
+        private Point _labelLocation2 = new Point(10, 40);
 
         private DataGridView _table;
         private Size _tableSize = new Size(500, 700);
-        private Point _tableLocation = new Point(10, 40);
+        private Point _tableLocation = new Point(10, 70);
         private ToolStripMenuItem _history;
         private ToolStripMenuItem _save;
         private DataGridViewColumn _cumulative;
@@ -34,7 +35,7 @@ namespace SharpNeat.Domains.IPD
 
         private ZedGraphControl _graphArchive;
         private Size _graphSize = new Size(700, 700);
-        private Point _graphLocation = new Point(520, 40);
+        private Point _graphLocation = new Point(520, 70);
 
         public IPDDomain(IGenomeDecoder<NeatGenome, IBlackBox> genomeDecoder, ref IPDExperiment.Info info)
         {
@@ -58,6 +59,7 @@ namespace SharpNeat.Domains.IPD
                 CreateTable();
                 CreateArchiveGraph();
                 CreateInfoLabel();
+                CreateSSButtons();
                 ResumeLayout();
             }
             catch
@@ -93,11 +95,75 @@ namespace SharpNeat.Domains.IPD
             UpdateArchiveGraph();
         }
 
+        private void CreateSSButtons()
+        {
+            string path = Directory.GetCurrentDirectory() + "\\Screenshots";
+
+            var screenshot = new System.Windows.Forms.Button();
+            screenshot.Size = new Size(100, 50);
+            screenshot.Text = "Screenshot";
+            screenshot.Location = new Point(_labelLocation1.X + _labelSize.Width + 10, 10);
+            screenshot.Click += (sender, args) =>
+            {
+                Bitmap captureBitmap = new Bitmap(Screen.FromControl(this).Bounds.Width, Screen.FromControl(this).Bounds.Height);
+                Rectangle captureRectangle = Screen.FromControl(this).Bounds;
+                Graphics captureGraphics = Graphics.FromImage(captureBitmap);
+                captureGraphics.CopyFromScreen(captureRectangle.Left, captureRectangle.Top, 0, 0, captureRectangle.Size);
+
+                string s = "-";
+                string image;
+                if (_info.EvaluationMode == IPDExperiment.EvaluationMode.Novelty)
+                    image = _info.EvaluationMode.ToString() + s
+                        + _info.PopulationSize + s
+                        + _info.NumberOfGames + s
+                        + _info.NoveltyMetric + s
+                        + "K" + _info.NoveltyK + s
+                        + "Reach" + (_info.InputCount / 2) + s;
+                else
+                    image = _info.EvaluationMode.ToString() + s
+                        + _info.PopulationSize + s
+                        + _info.NumberOfGames + s
+                        + "Reach" + (_info.InputCount / 2) + s;
+                string opponents = "";
+                int r = 0;
+                for (int i = 0; i < _info.OpponentPool.Length; i++)
+                {
+                    if (_info.OpponentPool[i].Name.Length > 9 && _info.OpponentPool[i].Name.Substring(0, 9) == "Generated")
+                        r++;
+                    else
+                        opponents += _info.OpponentPool[i].Name + ((i < _info.OpponentPool.Length - 1) ? "," : "");
+                    if (image.Length + opponents.Length > 230)
+                        break;
+                }
+                if (r > 0)
+                    opponents += ",Random" + r;
+                                
+                Directory.CreateDirectory(path);
+                captureBitmap.Save(path + "\\" + image + opponents + ".png", System.Drawing.Imaging.ImageFormat.Png);
+            };
+
+            var open = new System.Windows.Forms.Button();
+            open.Size = new Size(100, 50);
+            open.Text = "Open Folder";
+            open.Location = new Point(screenshot.Location.X + 110, 10);
+            open.Click += (sender, args) =>
+            {
+                if (Directory.Exists(path))
+                {
+                    ProcessStartInfo startInfo = new ProcessStartInfo("explorer.exe", path);
+                    Process.Start(startInfo);
+                };
+            };
+
+            Controls.Add(open);
+            Controls.Add(screenshot);
+        }
+
         private void CreateInfoLabel()
         {
             var label1 = new System.Windows.Forms.Label();
             label1.Size = _labelSize;
-            label1.Location = _label1Location;
+            label1.Location = _labelLocation1;
             label1.Font = new Font(label1.Font.FontFamily, 12);
 
             label1.Text =
@@ -113,7 +179,7 @@ namespace SharpNeat.Domains.IPD
 
             var label2 = new System.Windows.Forms.Label();
             label2.Size = _labelSize;
-            label2.Location = _label2Location;
+            label2.Location = _labelLocation2;
             label2.Font = new Font(label2.Font.FontFamily, 10);
 
             if (_info.EvaluationMode == IPDExperiment.EvaluationMode.Novelty)
@@ -200,10 +266,10 @@ namespace SharpNeat.Domains.IPD
                 }
             }
 
-            var f = g.AddCurve("First hit", new PointPairList() { new PointPair(first, 1.0d) }, Color.White, SymbolType.Triangle);
-            f.IsY2Axis = true;
-            f.Symbol.Size = 20;
-            f.Symbol.Fill = new Fill(Brushes.Green);
+            //var f = g.AddCurve("First hit", new PointPairList() { new PointPair(first, 1.0d) }, Color.White, SymbolType.Triangle);
+            //f.IsY2Axis = true;
+            //f.Symbol.Size = 20;
+            //f.Symbol.Fill = new Fill(Brushes.Green);
 
             var @as = g.AddCurve("Avg. R-1 Score", averageWinningScore, Color.Green, SymbolType.Triangle);
             @as.Line.Width = 3;
@@ -220,11 +286,11 @@ namespace SharpNeat.Domains.IPD
             var s = g.AddCurve("Score", ii, score, Color.Maroon, SymbolType.HDash);
             s.Line.IsVisible = false;
 
-            var r = g.AddCurve("Ranking", ii, rank, Color.Coral, SymbolType.Diamond);
-            r.IsY2Axis = true;
-            r.Symbol.Fill = new Fill(Brushes.Coral);
-            r.Symbol.Size = 3;
-            r.Line.IsVisible = false;
+            //var r = g.AddCurve("Ranking", ii, rank, Color.Coral, SymbolType.Diamond);
+            //r.IsY2Axis = true;
+            //r.Symbol.Fill = new Fill(Brushes.Coral);
+            //r.Symbol.Size = 3;
+            //r.Line.IsVisible = false;
 
             _graphArchive.AxisChange();
         }

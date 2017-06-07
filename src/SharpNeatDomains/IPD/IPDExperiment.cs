@@ -70,6 +70,7 @@ namespace SharpNeat.Domains.IPD
         int _numberOfGames;
         IPDPlayer[] _opponentPool;
         EvaluationMode _evaluationMode;
+        ulong _evaluationLimit;
         NoveltyMetric _noveltyMetric;
         int _noveltyK;
 
@@ -172,6 +173,7 @@ namespace SharpNeat.Domains.IPD
             string os = XmlUtils.TryGetValueAsString(xmlConfig, "StaticOpponents");
             _opponentPool = CreatePool(seed, randoms, (os == null) ? new Opponent[0] : System.Array.ConvertAll(os.Split(','), (string o) => { return (Opponent)System.Enum.Parse(typeof(Opponent), o, true); }));
 
+            _evaluationLimit = (ulong)XmlUtils.GetValueAsInt(xmlConfig, "EvaluationLimit");
             _evaluationMode = GetValueAsEnum<EvaluationMode>("EvaluationMode");
             _noveltyMetric = GetValueAsEnum<NoveltyMetric>("NoveltyMetric");
             _noveltyK = XmlUtils.GetValueAsInt(xmlConfig, "NoveltyK");
@@ -329,6 +331,7 @@ namespace SharpNeat.Domains.IPD
             public int OutputCount { get { return _exp.OutputCount; } }
             
             public EvaluationMode EvaluationMode { get { return _exp._evaluationMode; } }
+            public ulong EvaluationLimit { get { return _exp._evaluationLimit; } }
             public NoveltyMetric NoveltyMetric { get { return _exp._noveltyMetric; } }
             public int NoveltyK { get { return _exp._noveltyK; } }
 
