@@ -340,6 +340,7 @@ namespace SharpNeat.Domains.IPD
 
             public int PopulationSize { get { return _exp._populationSize; } }
             public int CurrentGeneration { get { return (int)_genGet(); } }
+            public System.Func<ulong> Evaluations { get; set; }
             public System.Func<IBlackBox> BestNoveltyGenome { get; set; }
             public IBlackBox BestGenome { get { return _boxGet(); } }
             public double BestFitness { get { return _fitGet(); } }

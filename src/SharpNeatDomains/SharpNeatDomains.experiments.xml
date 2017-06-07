@@ -19,7 +19,7 @@
       <RandomPlayerSeed>9865</RandomPlayerSeed>
       <RandomPlayerCount>0</RandomPlayerCount>
       <RandomRobustCheck>100</RandomRobustCheck>
-      <StaticOpponents>ZD_2,ZD_2</StaticOpponents>
+      <StaticOpponents>ZDGTFT_2,ZDGTFT_2</StaticOpponents>
       <!--
             AllC,
             AllD,
@@ -39,7 +39,7 @@
             CD,
             DC
         -->
-      <EvaluationMode>Score</EvaluationMode>
+      <EvaluationMode>Novelty</EvaluationMode>
       <!--
           Score,  (objective)
           Rank,   (objective)
