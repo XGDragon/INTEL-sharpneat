@@ -15,12 +15,14 @@
       <Description>
         TBD.
       </Description>
-      <IPDGames>300</IPDGames>
-      <EvaluationLimit>0</EvaluationLimit>
+      <IPDGames>100</IPDGames>
+      <EvaluationLimit>100000</EvaluationLimit>
       <RandomPlayerSeed>9865</RandomPlayerSeed>
-      <RandomPlayerCount>5</RandomPlayerCount>
+      <RandomPlayerCount>0</RandomPlayerCount>
       <RandomRobustCheck>100</RandomRobustCheck>
-      <StaticOpponents>ZDGTFT_2,ZDGTFT_2,GTFT,CCD</StaticOpponents>
+      <StaticOpponents>
+        ALLC,ALLD,TFT,STFT
+      </StaticOpponents>
       <!--
             AllC,
             AllD,
@@ -40,7 +42,7 @@
             CD,
             DC
         -->
-      <EvaluationMode>Novelty</EvaluationMode>
+      <EvaluationMode>Score</EvaluationMode>
       <!--
           Score,  (objective)
           Rank,   (objective)

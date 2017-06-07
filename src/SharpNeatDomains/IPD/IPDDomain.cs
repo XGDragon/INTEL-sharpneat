@@ -266,25 +266,34 @@ namespace SharpNeat.Domains.IPD
                 }
             }
 
+            Color[] greyscale = new Color[4]
+            {
+                Color.FromArgb(180, 180, 180), //lightest
+                Color.FromArgb(120, 120, 120),
+                Color.FromArgb(60, 60, 60),
+                Color.FromArgb(0, 0, 0) //darkest
+            };
+
             //var f = g.AddCurve("First hit", new PointPairList() { new PointPair(first, 1.0d) }, Color.White, SymbolType.Triangle);
             //f.IsY2Axis = true;
             //f.Symbol.Size = 20;
             //f.Symbol.Fill = new Fill(Brushes.Green);
-
-            var @as = g.AddCurve("Avg. R-1 Score", averageWinningScore, Color.Green, SymbolType.Triangle);
-            @as.Line.Width = 3;
-            @as.Symbol.Size = 5;
-            @as.Symbol.Fill = new Fill(Brushes.Green);
-
-            var ar = g.AddCurve("Average Rank", ii, averageRank, Color.Blue, SymbolType.None);
+            
+            var ar = g.AddCurve("Average Rank", ii, averageRank, greyscale[3], SymbolType.None);
             ar.IsY2Axis = true;
             ar.Line.Width = 3;
 
-            var t = g.AddCurve("Top Score", topScore, Color.Purple, SymbolType.Square);
+            var @as = g.AddCurve("Avg. R-1 Score", averageWinningScore, greyscale[1], SymbolType.Triangle);
+            @as.Line.Width = 1;
+            @as.Symbol.Size = 7;
+            @as.Symbol.Fill = new Fill(greyscale[1]);
+
+            var t = g.AddCurve("Top Score", topScore, greyscale[0], SymbolType.None);
             t.Line.Width = 2;
 
-            var s = g.AddCurve("Score", ii, score, Color.Maroon, SymbolType.HDash);
+            var s = g.AddCurve("Score", ii, score, greyscale[2], SymbolType.HDash);
             s.Line.IsVisible = false;
+            s.Symbol.Size = 3;
 
             //var r = g.AddCurve("Ranking", ii, rank, Color.Coral, SymbolType.Diamond);
             //r.IsY2Axis = true;
