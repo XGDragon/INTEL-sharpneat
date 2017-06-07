@@ -285,6 +285,7 @@ namespace SharpNeat.Domains.IPD
 
             var @as = g.AddCurve("Avg. R-1 Score", averageWinningScore, greyscale[1], SymbolType.Triangle);
             @as.Line.Width = 1;
+            @as.Line.IsVisible = false;
             @as.Symbol.Size = 7;
             @as.Symbol.Fill = new Fill(greyscale[1]);
 
