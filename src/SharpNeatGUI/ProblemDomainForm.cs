@@ -39,6 +39,7 @@ namespace SharpNeatGUI
 
             _domainViewControl = domainViewControl;
             domainViewControl.Dock = DockStyle.Fill;
+
             this.Controls.Add(domainViewControl);
             this.Size = domainViewControl.WindowSize;
 

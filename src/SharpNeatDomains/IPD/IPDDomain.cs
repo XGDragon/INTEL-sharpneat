@@ -21,11 +21,11 @@ namespace SharpNeat.Domains.IPD
         private IPDGame[,] _games;
 
         private System.Windows.Forms.Label _label;
-        private Size _labelSize = new Size(1400, 30);
+        private Size _labelSize = new Size(1200, 30);
         private Point _labelLocation = new Point(10, 10);
 
         private DataGridView _table;
-        private Size _tableSize = new Size(700, 700);
+        private Size _tableSize = new Size(500, 700);
         private Point _tableLocation = new Point(10, 40);
         private ToolStripMenuItem _history;
         private ToolStripMenuItem _save;
@@ -34,7 +34,7 @@ namespace SharpNeat.Domains.IPD
 
         private ZedGraphControl _graphArchive;
         private Size _graphSize = new Size(700, 700);
-        private Point _graphLocation = new Point(720, 40);
+        private Point _graphLocation = new Point(520, 40);
 
         public IPDDomain(IGenomeDecoder<NeatGenome, IBlackBox> genomeDecoder, ref IPDExperiment.Info info)
         {

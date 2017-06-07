@@ -24,7 +24,11 @@ namespace SharpNeatGUI
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainForm());
+
+            MainForm mf = new MainForm();
+            mf.StartPosition = FormStartPosition.Manual;
+            mf.Location = new System.Drawing.Point(0, 0);
+            Application.Run(mf);
         }
     }
 }

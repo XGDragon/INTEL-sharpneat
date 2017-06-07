@@ -822,6 +822,10 @@ namespace SharpNeatGUI
             // Prevent creating more then one instance of the form.
             problemDomainToolStripMenuItem.Enabled = false;
 
+            // Move the form to next to this form.
+            _domainForm.StartPosition = FormStartPosition.Manual;
+            _domainForm.Location = new Point(Location.X + Size.Width);
+
             // Show the form.
             _domainForm.Show(this);
             _domainForm.RefreshView();
