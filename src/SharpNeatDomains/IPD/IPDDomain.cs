@@ -216,7 +216,7 @@ namespace SharpNeat.Domains.IPD
 
             GraphPane g = _graphArchive.GraphPane;
             g.Title.Text = "Novelty Archive Visualization";
-            g.XAxis.Title.Text = "Index (ordered by when items were added)";
+            g.XAxis.Title.Text = "Archive Index";
             g.YAxis.Title.Text = "Score";
 
             g.Y2Axis.IsVisible = true;
@@ -239,11 +239,12 @@ namespace SharpNeat.Domains.IPD
             double[] rank = new double[archive.Count];
             double[] averageRank = new double[archive.Count];
             PointPairList averageWinningScore = new PointPairList();
+            PointPairList winningScores = new PointPairList();
             PointPairList topScore = new PointPairList();
 
             double averageRankCounter = 0;
             double averageWinningScoreCounter = 0;
-            double topScoreCounter = -1;
+            //double topScoreCounter = -1;
             int first = -1;
             for (int i = 0; i < ii.Length; i++)
             {
@@ -253,8 +254,8 @@ namespace SharpNeat.Domains.IPD
 
                 averageRankCounter += rank[i];
                 averageRank[i] = averageRankCounter / (i + 1);
-                topScoreCounter = (score[i] > topScoreCounter) ? score[i] : topScoreCounter;
-                topScore.Add(new PointPair(i, topScoreCounter));
+                //topScoreCounter = (score[i] > topScoreCounter) ? score[i] : topScoreCounter;
+                //topScore.Add(new PointPair(i, topScoreCounter));
 
                 if (rank[i] == 1.0)
                 {
@@ -263,6 +264,7 @@ namespace SharpNeat.Domains.IPD
 
                     averageWinningScoreCounter += score[i]; //average score, only counting those with rank 1
                     averageWinningScore.Add(new PointPair(i, averageWinningScoreCounter / (averageWinningScore.Count + 1)));
+                    
                 }
             }
 
@@ -283,16 +285,22 @@ namespace SharpNeat.Domains.IPD
             ar.IsY2Axis = true;
             ar.Line.Width = 3;
 
-            var @as = g.AddCurve("Avg. R-1 Score", averageWinningScore, greyscale[1], SymbolType.Triangle);
-            @as.Line.Width = 1;
+            var @as = g.AddCurve("Average Winning Score", averageWinningScore, greyscale[2], SymbolType.Star);
+            @as.Line.Width = 0;
             @as.Line.IsVisible = false;
-            @as.Symbol.Size = 7;
-            @as.Symbol.Fill = new Fill(greyscale[1]);
+            @as.Symbol.Size = 2;
+            @as.Symbol.Fill = new Fill(greyscale[2]);
 
-            var t = g.AddCurve("Top Score", topScore, greyscale[0], SymbolType.None);
-            t.Line.Width = 2;
+            //var ws = g.AddCurve("Winning Behavior", winningScores, greyscale[2], SymbolType.Star);
+            //ws.Line.Width = 0;
+            //ws.Line.IsVisible = false;
+            //ws.Symbol.Size = 3;
+            //ws.Symbol.Fill = new Fill(greyscale[2]);
 
-            var s = g.AddCurve("Score", ii, score, greyscale[2], SymbolType.HDash);
+            //var t = g.AddCurve("Top Score", topScore, greyscale[0], SymbolType.None);
+            //t.Line.Width = 2;
+
+            var s = g.AddCurve("Behavior", ii, score, greyscale[1], SymbolType.HDash);
             s.Line.IsVisible = false;
             s.Symbol.Size = 3;
 
@@ -474,7 +482,7 @@ namespace SharpNeat.Domains.IPD
                 table.Rows[i].Cells[0].Value = game.GetChoice(players[0], i);
                 table.Rows[i].Cells[1].Value = game.GetChoice(players[1], i);
                 table.Rows[i].Cells[2].Value = game.GetPast(players[0], i) + ", " + game.GetPast(players[1], i);
-                a += (int)game.GetPast(players[0], i); b += (int)game.GetPast(players[1], i);
+                a += IPDGame.PastToScore(game.GetPast(players[0], i)); b += IPDGame.PastToScore(game.GetPast(players[1], i));
                 table.Rows[i].Cells[3].Value = a + ", " + b;
             }
 

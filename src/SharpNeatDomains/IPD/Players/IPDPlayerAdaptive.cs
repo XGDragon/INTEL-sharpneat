@@ -16,6 +16,8 @@ namespace SharpNeat.Domains.IPD.Players
         private int _totalDefectScore;
         private int _totalCooperateScore;
 
+        private Object _choiceLock = new Object();
+
         public IPDPlayerAdaptive()
         {
 
@@ -23,26 +25,28 @@ namespace SharpNeat.Domains.IPD.Players
 
         public override IPDGame.Choices Choice(IPDGame game)
         {
-            IPDGame.Choices pr;
-            int prt = game.T - 1;
-
-            if (game.T == 0)
-                return _initialChoices.Dequeue();
-            else
+            lock (_choiceLock)
             {
-                pr = game.GetChoice(this, prt);
-
-                if (pr == IPDGame.Choices.C)
-                    _totalCooperateScore += (int)game.GetPast(this, prt);
-                else
-                    _totalDefectScore += (int)game.GetPast(this, prt);
+                IPDGame.Choices pr;
+                int prt = game.T - 1;
 
                 if (_initialChoices.Count > 0)
                     return _initialChoices.Dequeue();
                 else
-                    return (_totalDefectScore > _totalCooperateScore) ? IPDGame.Choices.D : IPDGame.Choices.C;
-            }
+                {
+                    pr = game.GetChoice(this, prt);
 
+                    if (pr == IPDGame.Choices.C)
+                        _totalCooperateScore += (int)game.GetPast(this, prt);
+                    else
+                        _totalDefectScore += (int)game.GetPast(this, prt);
+
+                    if (_initialChoices.Count > 0)
+                        return _initialChoices.Dequeue();
+                    else
+                        return (_totalDefectScore > _totalCooperateScore) ? IPDGame.Choices.D : IPDGame.Choices.C;
+                }
+            }
         }
 
         public override void Reset()

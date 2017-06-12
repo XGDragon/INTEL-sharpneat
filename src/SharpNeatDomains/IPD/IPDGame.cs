@@ -96,8 +96,10 @@ namespace SharpNeat.Domains.IPD
 
             while (T < Length)
             {
-                Choices a = A.Choice(this);
-                Choices b = B.Choice(this);
+                Choices a, b;
+                
+                a = A.Choice(this);
+                b = B.Choice(this);
 
                 if (a == Choices.R)
                 {

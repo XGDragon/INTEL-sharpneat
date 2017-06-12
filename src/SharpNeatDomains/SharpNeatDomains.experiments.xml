@@ -5,7 +5,6 @@
     <AssemblyPath>SharpNeatDomains.dll</AssemblyPath>
     <ClassName>SharpNeat.Domains.IPD.IPDExperiment</ClassName>
     <Config>
-      <PopulationSize>150</PopulationSize>
       <SpecieCount>10</SpecieCount>
       <Activation>
         <Scheme>Acyclic</Scheme>
@@ -15,19 +14,28 @@
       <Description>
         TBD.
       </Description>
-      <IPDGames>100</IPDGames>
+	  <EvaluationMode>Score</EvaluationMode>
+      <!--
+          Score,  (objective)
+          Rank,   (objective)
+          Novelty (novelty)
+        -->
+      <PopulationSize>150</PopulationSize>
+      <IPDGames>100</IPDGames>   
+      <NoveltyK>3</NoveltyK>
+      <PastInputReach>5</PastInputReach>
       <EvaluationLimit>100000</EvaluationLimit>
-      <RandomPlayerSeed>9865</RandomPlayerSeed>
-      <RandomPlayerCount>0</RandomPlayerCount>
-      <RandomRobustCheck>100</RandomRobustCheck>
-      <StaticOpponents>
-        ALLC,ALLD,TFT,STFT
+	    <StaticOpponents>
+        GTFT,TF2T,Pavlov,ALLR,ZDGTFT_2,ZD_2,Grudger,HARD_JOSS,Majority,HardTFT,HardTF2T,Prober,Prober2,Prober3,HardProber,NaiveProber
       </StaticOpponents>
       <!--
             AllC,
             AllD,
             AllR,
             TFT,
+            TF2T,
+            HardTFT,
+            HardTF2T,
             STFT,
             Grudger,
             GTFT,
@@ -35,6 +43,13 @@
             ZD_2,
             Pavlov,
             Adaptive,
+            HARD_JOSS,
+            Majority,
+            Prober,
+            Prober2,
+            Prober3,
+            HardProber,
+            NaiveProber,
             CCCD,
             CCD,
             DDDC,
@@ -42,20 +57,15 @@
             CD,
             DC
         -->
-      <EvaluationMode>Score</EvaluationMode>
-      <!--
-          Score,  (objective)
-          Rank,   (objective)
-          Novelty (novelty)
-        -->
       <NoveltyMetric>Choice</NoveltyMetric>
             <!--
           Score,
           Past,
           Choice
         -->
-      <NoveltyK>3</NoveltyK>
-      <PastInputReach>5</PastInputReach>
+      <RandomPlayerCount>0</RandomPlayerCount>
+      <RandomRobustCheck>100</RandomRobustCheck>  
+      <RandomPlayerSeed>9865</RandomPlayerSeed>
 
     </Config>
   </Experiment>

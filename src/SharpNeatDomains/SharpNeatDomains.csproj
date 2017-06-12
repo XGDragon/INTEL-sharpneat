@@ -147,6 +147,8 @@
     <Compile Include="IPD\IPDDomain.Designer.cs">
       <DependentUpon>IPDDomain.cs</DependentUpon>
     </Compile>
+    <Compile Include="IPD\Players\IPDPlayerProber.cs" />
+    <Compile Include="IPD\Players\IPDPlayerMajority.cs" />
     <Compile Include="IPD\Players\IPDPlayerAdaptive.cs" />
     <Compile Include="IPD\Players\IPDPlayerPattern.cs" />
     <Compile Include="IPD\Players\IPDPlayerZD.cs" />

@@ -22,6 +22,8 @@ namespace SharpNeat.Domains.IPD.Players
 
         private bool _hasRandom;
 
+        private Object _choiceLock = new Object();
+
         public IPDPlayerZD(string name, double r, double s, double t, double p, IPDGame.Choices startingChoice)
         {
             _name = name;
@@ -37,25 +39,28 @@ namespace SharpNeat.Domains.IPD.Players
 
         public override IPDGame.Choices Choice(IPDGame game)
         {
-            if (game.T == 0)
+            lock (_choiceLock)
             {
-                game.HasRandom = _hasRandom;
-                return _start;
-            }
-            
-            switch (game.GetPast(this, game.T - 1))
-            {
-                case IPDGame.Past.T:
-                    return CooperateProbability(_t);
-                case IPDGame.Past.R:
-                    return CooperateProbability(_r);
-                case IPDGame.Past.P:
-                    return CooperateProbability(_p);
-                case IPDGame.Past.S:
-                    return CooperateProbability(_s);
-            }
+                if (game.T == 0)
+                {
+                    game.HasRandom = _hasRandom;
+                    return _start;
+                }
 
-            throw new Exception("How did we get here?");
+                switch (game.GetPast(this, game.T - 1))
+                {
+                    case IPDGame.Past.T:
+                        return CooperateProbability(_t);
+                    case IPDGame.Past.R:
+                        return CooperateProbability(_r);
+                    case IPDGame.Past.P:
+                        return CooperateProbability(_p);
+                    case IPDGame.Past.S:
+                        return CooperateProbability(_s);
+                }
+
+                throw new Exception("How did we get here?");
+            }
         }
 
         private IPDGame.Choices CooperateProbability(double p)

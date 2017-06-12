@@ -12,6 +12,7 @@ namespace SharpNeat.Domains.IPD.Players
     {
         private const double RANDOMPLAYER_RCHANCE = 0.0;
 
+        //GTFT,TF2T,Pavlov,ALLR,ZDGTFT_2,ZD_2,Grudger,HARD_JOSS,Majority,HardTFT,HardTF2T,Prober,Prober2,Prober3,HardProber,NaiveProber
         public static IPDPlayer Create(IPDExperiment.Opponent op)
         {
             string o = op.ToString();
@@ -25,6 +26,12 @@ namespace SharpNeat.Domains.IPD.Players
                     return new IPDPlayerZD(o, 0, 0, 0, 0, IPDGame.Choices.D);
                 case IPDExperiment.Opponent.TFT:
                     return new IPDPlayerZD(o, 1, 0, 1, 0, IPDGame.Choices.C);
+                case IPDExperiment.Opponent.TF2T:
+                    return CreateTF2T();
+                case IPDExperiment.Opponent.HardTFT:
+                    return CreateHardTFT();
+                case IPDExperiment.Opponent.HardTF2T:
+                    return CreateHardTF2T();
                 case IPDExperiment.Opponent.STFT:
                     return new IPDPlayerZD(o, 1, 0, 1, 0, IPDGame.Choices.D);
                 case IPDExperiment.Opponent.GTFT:
@@ -39,6 +46,20 @@ namespace SharpNeat.Domains.IPD.Players
                     return new IPDPlayerZD(o, 1, 1.0/8, 1, 1.0/4, IPDGame.Choices.C);
                 case IPDExperiment.Opponent.ZD_2:
                     return new IPDPlayerZD(o, 8.0/9, 1.0/2, 1.0/3, 0, IPDGame.Choices.C);
+                case IPDExperiment.Opponent.HARD_JOSS:
+                    return new IPDPlayerZD(o, 0.9, 0, 1, 0, IPDGame.Choices.C);
+                case IPDExperiment.Opponent.Majority:
+                    return new IPDPlayerMajority();
+                case IPDExperiment.Opponent.Prober:
+                    return new IPDPlayerProber();
+                case IPDExperiment.Opponent.Prober2:
+                    return new IPDPlayerProber(IPDPlayerProber.Probes.Two);
+                case IPDExperiment.Opponent.Prober3:
+                    return new IPDPlayerProber(IPDPlayerProber.Probes.Three);
+                case IPDExperiment.Opponent.HardProber:
+                    return new IPDPlayerProber(IPDPlayerProber.Probes.Hard);
+                case IPDExperiment.Opponent.NaiveProber:
+                    return new IPDPlayerZD(o, 0.9, 0, 0.9, 0, IPDGame.Choices.C);
                 default:
                     return new IPDPlayerPattern(o);
             }
@@ -56,7 +77,50 @@ namespace SharpNeat.Domains.IPD.Players
 
             return new IPDPlayerGenerated("Grudger", tree, IPDGame.Choices.C);
         }
-        
+
+        private static IPDPlayerGenerated CreateTF2T()
+        {
+            DecisionTree tree = new DecisionTree(new Dictionary<int, Node>()
+            {
+                { 0, new PayoffConditionalNode(1, 2, 1, IPDGame.Past.R, IPDGame.Past.T) },
+            { 1, new AssignResultNode(IPDGame.Choices.C) },
+                    { 2, new PayoffConditionalNode(3, 4, 2, IPDGame.Past.R, IPDGame.Past.T) },
+                { 3, new AssignResultNode(IPDGame.Choices.C) },
+                        { 4, new AssignResultNode(IPDGame.Choices.D) }
+            }, new QFunction(IPDGame.Choices.C));
+
+            return new IPDPlayerGenerated("TF2T", tree, IPDGame.Choices.C);
+        }
+
+        private static IPDPlayerGenerated CreateHardTFT()
+        {
+            DecisionTree tree = new DecisionTree(new Dictionary<int, Node>()
+            {
+                { 0, new PayoffConditionalNode(1, 2, 1, IPDGame.Past.P, IPDGame.Past.S) },
+            { 1, new AssignResultNode(IPDGame.Choices.D) },
+                { 2, new PayoffConditionalNode(1, 3, 2, IPDGame.Past.P, IPDGame.Past.S) },
+                { 3, new PayoffConditionalNode(1, 4, 3, IPDGame.Past.P, IPDGame.Past.S) },
+                { 4, new AssignResultNode(IPDGame.Choices.C) },
+            }, new QFunction(IPDGame.Choices.C));
+
+            return new IPDPlayerGenerated("HardTFT", tree, IPDGame.Choices.C);
+        }
+
+        private static IPDPlayerGenerated CreateHardTF2T()
+        {
+            DecisionTree tree = new DecisionTree(new Dictionary<int, Node>()
+            {
+                { 0, new PayoffConditionalNode(1, 2, 1, IPDGame.Past.P, IPDGame.Past.S) },
+                { 1, new PayoffConditionalNode(4, 5, 2, IPDGame.Past.P, IPDGame.Past.S) },
+                { 2, new PayoffConditionalNode(3, 5, 2, IPDGame.Past.P, IPDGame.Past.S) },
+                { 3, new PayoffConditionalNode(4, 5, 3, IPDGame.Past.P, IPDGame.Past.S) },
+                { 4, new AssignResultNode(IPDGame.Choices.D) },
+                { 5, new AssignResultNode(IPDGame.Choices.C) }
+            }, new QFunction(IPDGame.Choices.C));
+
+            return new IPDPlayerGenerated("HardTF2T", tree, IPDGame.Choices.C);
+        }
+
         private Random _factoryRandom;
         private int _condId;
         private int _resultId;
