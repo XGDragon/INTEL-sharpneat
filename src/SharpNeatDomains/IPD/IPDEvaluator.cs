@@ -51,8 +51,8 @@ namespace SharpNeat.Domains.IPD
             {
                 case IPDExperiment.EvaluationMode.Novelty:
                     primaryFitness = noveltyFitness; break;
-                case IPDExperiment.EvaluationMode.Rank:
-                    primaryFitness = pi.Rank; break;
+                case IPDExperiment.EvaluationMode.Wins:
+                    primaryFitness = pi.Wins; break;
                 default:
                 case IPDExperiment.EvaluationMode.Score:
                     primaryFitness = pi.Score; break;
@@ -75,6 +75,7 @@ namespace SharpNeat.Domains.IPD
         {
             Players.IPDPlayerPhenome p = new Players.IPDPlayerPhenome(phenome);
             double[] scores = new double[_info.OpponentPool.Length + 1];
+            double wins = 0;
             int phenomeIndex = _info.OpponentPool.Length;
             IPDGame[] games = new IPDGame[phenomeIndex];
 
@@ -84,6 +85,11 @@ namespace SharpNeat.Domains.IPD
                 var s = games[i].Evaluate(_info.RandomRobustCheck);
                 scores[i] += s.a + _info.OpponentScores[i];
                 scores[phenomeIndex] += s.b;
+
+                if (s.a == s.b)
+                    wins += 0.5;
+                else if (s.b > s.a)
+                    wins += 1.0;
             }
 
             double score = scores[phenomeIndex];
@@ -94,10 +100,10 @@ namespace SharpNeat.Domains.IPD
                 //Ties are not allowed
                 for (int i = 0; i < scores.Length; i++)
                     if (scores[i] == scores[phenomeIndex] && i != phenomeIndex)
-                        rank -= 0.05d;
+                        rank -= (1.0 / (double)_info.OpponentPool.Length) / 2.0;
             }
 
-            return new PhenomeInfo(phenome, rank, score, games);
+            return new PhenomeInfo(phenome, rank, wins, score, games);
         }
 
         private double EvaluateNovelty(PhenomeInfo info)
@@ -184,22 +190,24 @@ namespace SharpNeat.Domains.IPD
 
             public IBlackBox Phenome { get; private set; }
             public double Rank { get; private set; }
+            public double Wins { get; private set; }
             public double Score { get; private set; }
             public IPDGame[] Games { get; private set; }
-            public AuxFitnessInfo[] AuxiliaryFitnessInfo { get { _aux[0]._value = Score; _aux[1]._value = Rank; return _aux; } }
+            public AuxFitnessInfo[] AuxiliaryFitnessInfo { get { _aux[0]._value = Score; _aux[1]._value = Wins; return _aux; } }
 
             public long ID { get; set; }
 
             private double[] _pc;
             private AuxFitnessInfo[] _aux;
 
-            public PhenomeInfo(IBlackBox phenome, double rank, double score, IPDGame[] games)
+            public PhenomeInfo(IBlackBox phenome, double rank, double wins, double score, IPDGame[] games)
             {
                 Phenome = phenome;
                 Rank = rank;
+                Wins = wins;
                 Score = score;
                 Games = games;
-                _aux = new AuxFitnessInfo[2] { new AuxFitnessInfo("Score", 0), new AuxFitnessInfo("Rank", 0) };
+                _aux = new AuxFitnessInfo[2] { new AuxFitnessInfo("Score", 0), new AuxFitnessInfo("Wins", 0) };
 
                 if (_metric == IPDExperiment.NoveltyMetric.Choice)
                 {
@@ -230,16 +238,16 @@ namespace SharpNeat.Domains.IPD
 
             public override string ToString()
             {
-                return ID + "; Score: " + Score.ToString() + ", Rank: " + Rank.ToString();
+                return ID + "; Score: " + Score.ToString() + ", Wins: " + Wins.ToString();
             }
 
             public int CompareTo(PhenomeInfo other)
             {
-                if (Rank > other.Rank)
+                if (Wins > other.Wins)
                     return 1;
-                if (Rank < other.Rank)
+                if (Wins < other.Wins)
                     return -1;
-                if (Rank == other.Rank)
+                if (Wins == other.Wins)
                 {
                     if (Score > other.Score)
                         return 1;

@@ -14,15 +14,15 @@
       <Description>
         TBD.
       </Description>
-	  <EvaluationMode>Score</EvaluationMode>
+	  <EvaluationMode>Novelty</EvaluationMode>
       <!--
           Score,  (objective)
-          Rank,   (objective)
+          Wins,   (objective)
           Novelty (novelty)
         -->
       <PopulationSize>150</PopulationSize>
       <IPDGames>100</IPDGames>   
-      <NoveltyK>3</NoveltyK>
+      <NoveltyK>4</NoveltyK>
       <PastInputReach>5</PastInputReach>
       <EvaluationLimit>100000</EvaluationLimit>
 	    <StaticOpponents>
@@ -57,7 +57,7 @@
             CD,
             DC
         -->
-      <NoveltyMetric>Choice</NoveltyMetric>
+      <NoveltyMetric>Past</NoveltyMetric>
             <!--
           Score,
           Past,

@@ -51,7 +51,7 @@ namespace SharpNeat.Domains.IPD
         public enum EvaluationMode
         {
             Score,
-            Rank,
+            Wins,
             Novelty
         }
 

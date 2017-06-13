@@ -31,6 +31,7 @@ namespace SharpNeat.Domains.IPD
         private ToolStripMenuItem _history;
         private ToolStripMenuItem _save;
         private DataGridViewColumn _cumulative;
+        private DataGridViewColumn _wins;
         private DataGridViewColumn _rankings;
 
         private ZedGraphControl _graphArchive;
@@ -219,9 +220,16 @@ namespace SharpNeat.Domains.IPD
             g.XAxis.Title.Text = "Archive Index";
             g.YAxis.Title.Text = "Score";
 
+            g.Y2AxisList.Add("Rank");
+            g.Y2AxisList[1].IsVisible = false;
+            g.Y2AxisList[1].Scale.Min = 0.0;
+            g.Y2AxisList[1].Scale.Max = _info.OpponentPool.Length;
+
             g.Y2Axis.IsVisible = true;
+            g.Y2Axis.Title.Text = "Wins";
             g.Y2Axis.Scale.Min = 0.0;
-            g.Y2Axis.Scale.Max = 1.0;
+            g.Y2Axis.Scale.Max = _info.OpponentPool.Length;
+
 
             Controls.Add(_graphArchive);
         }
@@ -236,36 +244,25 @@ namespace SharpNeat.Domains.IPD
 
             double[] ii = new double[archive.Count];
             double[] score = new double[archive.Count];
-            double[] rank = new double[archive.Count];
+            double[] averageWins = new double[archive.Count];
             double[] averageRank = new double[archive.Count];
-            PointPairList averageWinningScore = new PointPairList();
-            PointPairList winningScores = new PointPairList();
-            PointPairList topScore = new PointPairList();
-
-            double averageRankCounter = 0;
-            double averageWinningScoreCounter = 0;
-            //double topScoreCounter = -1;
-            int first = -1;
+            PointPairList gold = new PointPairList();
+            
+            double avgW = 0;
+            double avgR = 0;
             for (int i = 0; i < ii.Length; i++)
             {
                 ii[i] = i;
                 score[i] = archive[i].Score;
-                rank[i] = archive[i].Rank;
 
-                averageRankCounter += rank[i];
-                averageRank[i] = averageRankCounter / (i + 1);
-                //topScoreCounter = (score[i] > topScoreCounter) ? score[i] : topScoreCounter;
-                //topScore.Add(new PointPair(i, topScoreCounter));
+                avgR += archive[i].Rank;
+                averageRank[i] = avgR / (i + 1);
 
-                if (rank[i] == 1.0)
-                {
-                    if (first == -1)
-                        first = i;
+                avgW += archive[i].Wins;    //==avgR when single opponent
+                averageWins[i] = avgW / (i + 1);
 
-                    averageWinningScoreCounter += score[i]; //average score, only counting those with rank 1
-                    averageWinningScore.Add(new PointPair(i, averageWinningScoreCounter / (averageWinningScore.Count + 1)));
-                    
-                }
+                if (archive[i].Wins == _info.OpponentPool.Length && archive[i].Rank == 1.0)
+                    gold.Add(new PointPair(i, score[i]));
             }
 
             Color[] greyscale = new Color[4]
@@ -275,41 +272,25 @@ namespace SharpNeat.Domains.IPD
                 Color.FromArgb(60, 60, 60),
                 Color.FromArgb(0, 0, 0) //darkest
             };
-
-            //var f = g.AddCurve("First hit", new PointPairList() { new PointPair(first, 1.0d) }, Color.White, SymbolType.Triangle);
-            //f.IsY2Axis = true;
-            //f.Symbol.Size = 20;
-            //f.Symbol.Fill = new Fill(Brushes.Green);
             
-            var ar = g.AddCurve("Average Rank", ii, averageRank, greyscale[3], SymbolType.None);
+            var gp = g.AddCurve("Optimal Behavior", gold, greyscale[3], SymbolType.Diamond);
+            gp.Line.IsVisible = false;
+            gp.Symbol.Size = 6;
+            gp.Symbol.Fill = new Fill(greyscale[3]);
+
+            var ar = g.AddCurve("Average Rank", ii, averageRank, greyscale[2], SymbolType.None);
             ar.IsY2Axis = true;
+            ar.YAxisIndex = 1;
             ar.Line.Width = 3;
 
-            var @as = g.AddCurve("Average Winning Score", averageWinningScore, greyscale[2], SymbolType.Star);
-            @as.Line.Width = 0;
-            @as.Line.IsVisible = false;
-            @as.Symbol.Size = 2;
-            @as.Symbol.Fill = new Fill(greyscale[2]);
-
-            //var ws = g.AddCurve("Winning Behavior", winningScores, greyscale[2], SymbolType.Star);
-            //ws.Line.Width = 0;
-            //ws.Line.IsVisible = false;
-            //ws.Symbol.Size = 3;
-            //ws.Symbol.Fill = new Fill(greyscale[2]);
-
-            //var t = g.AddCurve("Top Score", topScore, greyscale[0], SymbolType.None);
-            //t.Line.Width = 2;
+            var aw = g.AddCurve("Average Wins", ii, averageWins, greyscale[0], SymbolType.None);
+            aw.IsY2Axis = true;
+            aw.Line.Width = 3;
 
             var s = g.AddCurve("Behavior", ii, score, greyscale[1], SymbolType.HDash);
             s.Line.IsVisible = false;
             s.Symbol.Size = 3;
-
-            //var r = g.AddCurve("Ranking", ii, rank, Color.Coral, SymbolType.Diamond);
-            //r.IsY2Axis = true;
-            //r.Symbol.Fill = new Fill(Brushes.Coral);
-            //r.Symbol.Size = 3;
-            //r.Line.IsVisible = false;
-
+            
             _graphArchive.AxisChange();
         }
         
@@ -351,12 +332,18 @@ namespace SharpNeat.Domains.IPD
             }
             _table.Rows.AddRange(rows);
 
-            //Cumulative and Ranking columns
+            //Cumulative, Wins and Ranking columns
             _cumulative = new DataGridViewTextBoxColumn();
             _cumulative.HeaderText = "Cumulative Score";
             _cumulative.AutoSizeMode = DataGridViewAutoSizeColumnMode.ColumnHeader;
             _cumulative.SortMode = DataGridViewColumnSortMode.NotSortable;
             _table.Columns.Add(_cumulative);
+
+            _wins = new DataGridViewTextBoxColumn();
+            _wins.HeaderText = "Total Wins";
+            _wins.AutoSizeMode = DataGridViewAutoSizeColumnMode.ColumnHeader;
+            _wins.SortMode = DataGridViewColumnSortMode.NotSortable;
+            _table.Columns.Add(_wins);
 
             _rankings = new DataGridViewTextBoxColumn();
             _rankings.HeaderText = "Ranking";
@@ -374,6 +361,7 @@ namespace SharpNeat.Domains.IPD
 
             //Fill in table
             double[] totals = new double[_players.Length];
+            double[] wins = new double[_players.Length];
             for (int i = 0; i < _players.Length; i++)
                 for (int j = i + 1; j < _players.Length; j++)
                     if (i != j)
@@ -391,6 +379,13 @@ namespace SharpNeat.Domains.IPD
 
                         totals[i] += iScore;
                         totals[j] += jScore;
+
+                        if (iScore == jScore)
+                        {
+                            wins[i] += 0.5;
+                            wins[j] += 0.5;
+                        }
+                        else wins[(iScore > jScore) ? i : j]++;
                     }
 
             //Calculate cumulative column
@@ -399,7 +394,14 @@ namespace SharpNeat.Domains.IPD
                 _table.Rows[i].Cells[_cumulative.DisplayIndex].Value = totals[i];
                 _table.Rows[i].Cells[_cumulative.DisplayIndex].ToolTipText = _players[i].Name + "'s total score";
             }
-            
+
+            //Calculate wins
+            for (int i = 0; i < _players.Length; i++)
+            {
+                _table.Rows[i].Cells[_wins.DisplayIndex].Value = wins[i];
+                _table.Rows[i].Cells[_cumulative.DisplayIndex].ToolTipText = _players[i].Name + "'s total wins";
+            }
+
             //Calculate rankings column 
             var ranks = totals.Rank();
             for (int i = 0; i < _players.Length; i++)
