@@ -14,7 +14,7 @@
       <Description>
         TBD.
       </Description>
-	  <EvaluationMode>Novelty</EvaluationMode>
+	  <EvaluationMode>Score</EvaluationMode>
       <!--
           Score,  (objective)
           Wins,   (objective)
@@ -26,7 +26,7 @@
       <PastInputReach>5</PastInputReach>
       <EvaluationLimit>100000</EvaluationLimit>
 	    <StaticOpponents>
-        GTFT,TF2T,Pavlov,ALLR,ZDGTFT_2,ZD_2,Grudger,HARD_JOSS,Majority,HardTFT,HardTF2T,Prober,Prober2,Prober3,HardProber,NaiveProber
+        GTFT,ZDGTFT_2,ZD_2
       </StaticOpponents>
       <!--
             AllC,

@@ -223,7 +223,7 @@ namespace SharpNeat.Domains.IPD
             g.Y2AxisList.Add("Rank");
             g.Y2AxisList[1].IsVisible = false;
             g.Y2AxisList[1].Scale.Min = 0.0;
-            g.Y2AxisList[1].Scale.Max = _info.OpponentPool.Length;
+            g.Y2AxisList[1].Scale.Max = 1.0;
 
             g.Y2Axis.IsVisible = true;
             g.Y2Axis.Title.Text = "Wins";
